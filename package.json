@@ -1,0 +1,23 @@
+{
+  "name": "area-project",
+  "version": "1.0.0",
+  "description": "Area project - Monorepo with Fastify server, React web app, and React Native mobile app",
+  "private": true,
+  "workspaces": [
+    "server",
+    "web",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:server": "npm --workspace=server run dev",
+    "dev:web": "npm --workspace=web run dev",
+    "dev:mobile": "npm --workspace=mobile run start",
+    "build:server": "npm --workspace=server run build",
+    "build:web": "npm --workspace=web run build",
+    "build:mobile": "npm --workspace=mobile run build",
+    "start:server": "npm --workspace=server run start",
+    "start:web": "npm --workspace=web run preview",
+    "install-all": "npm install"
+  },
+  "devDependencies": {}
+}
