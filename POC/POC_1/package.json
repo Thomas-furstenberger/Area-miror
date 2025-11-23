@@ -1,0 +1,20 @@
+{
+  "name": "mini-poc",
+  "version": "1.0.0",
+  "description": "Mini POC with React + Vite + Fastify + Prisma + Expo",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile"
+  ],
+  "scripts": {
+    "install-all": "npm install && npm install --workspace=backend && npm install --workspace=frontend && npm install --workspace=mobile",
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\" \"npm run dev -w mobile\"",
+    "db:setup": "npm run migrate -w backend",
+    "db:reset": "npm run migrate:reset -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

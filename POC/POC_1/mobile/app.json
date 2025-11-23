@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "mini-poc-mobile",
+    "slug": "mini-poc-mobile",
+    "version": "1.0.0",
+    "scheme": "myapp",
+    "sdkVersion": "54.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+      "package": "com.minipoc.mobile"
+    },
+    "plugins": []
+  }
+}

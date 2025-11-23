@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+
+# Development
+.env
+.env.local
+.env.*.local
+
+# Expo & React Native
+.expo/
+.expo-shared/
+.expo-root
+*.jks
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.haste_cache/
+*.ipa
+*.apk
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# OS
+Thumbs.db
