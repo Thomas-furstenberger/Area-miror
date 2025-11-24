@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/poc2
+  frontend:
+    build: ./frontend
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: poc2
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d poc2"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
