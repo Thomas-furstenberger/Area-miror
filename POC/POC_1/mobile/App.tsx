@@ -19,7 +19,7 @@ interface Note {
   createdAt: string;
 }
 
-const API_URL = 'http://localhost:3000/api/notes';
+const API_URL = 'http://10.44.137.89/api/notes';
 
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);

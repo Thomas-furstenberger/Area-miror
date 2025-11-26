@@ -23,37 +23,45 @@ This will install all dependencies for the three applications.
 ## Development
 
 ### Server (Fastify)
+
 ```bash
-npm run dev:server
+npm run dev
 ```
+
 The API will be available at `http://localhost:3000`
 
 ### Web (React + Vite)
+
 ```bash
-npm run dev:web
+npm run dev
 ```
+
 The application will be available at `http://localhost:5173`
 
 ### Mobile (React Native)
+
 ```bash
-npm run dev:mobile
+npm run dev
 ```
 
 ## Build
 
 ### Server
+
 ```bash
 npm run build:server
 npm run start:server
 ```
 
 ### Web
+
 ```bash
 npm run build:web
 npm run start:web
 ```
 
 ### Mobile
+
 ```bash
 npm run build:mobile
 ```

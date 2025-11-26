@@ -1,14 +1,14 @@
 import Fastify from 'fastify';
 
 const fastify = Fastify({
-  logger: true
+  logger: true,
 });
 
-fastify.get('/', async (request, reply) => {
+fastify.get('/', async (_request, _reply) => {
   return { message: 'Welcome to Area Server API' };
 });
 
-fastify.get('/health', async (request, reply) => {
+fastify.get('/health', async (_request, _reply) => {
   return { status: 'ok' };
 });
 

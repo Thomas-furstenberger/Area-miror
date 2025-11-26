@@ -17,7 +17,16 @@
     "build:mobile": "npm --workspace=mobile run build",
     "start:server": "npm --workspace=server run start",
     "start:web": "npm --workspace=web run preview",
-    "install-all": "npm install"
+    "install-all": "npm install",
+    "lint": "npm --workspace=server run lint && npm --workspace=web run lint && npm --workspace=mobile run lint",
+    "lint:fix": "npm --workspace=server run lint:fix && npm --workspace=web run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.6.2"
+  }
 }
