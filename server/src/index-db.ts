@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { UserService } from './user.service';
 import { generateAccessToken, generateSessionToken } from './auth';
+import { SERVICES } from './services.config';
 
 const fastify = Fastify({
   logger: true,
@@ -17,6 +18,32 @@ fastify.get('/', async (_request, _reply) => {
 
 fastify.get('/health', async (_request, _reply) => {
   return { status: 'ok' };
+});
+
+// About endpoint - Required by docker-compose specification
+fastify.get('/about.json', async (request, reply) => {
+  const clientIp = request.ip || request.headers['x-forwarded-for'] || 'unknown';
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  return {
+    client: {
+      host: clientIp,
+    },
+    server: {
+      current_time: currentTime,
+      services: SERVICES.map((service) => ({
+        name: service.name,
+        actions: service.actions.map((action) => ({
+          name: action.name,
+          description: action.description,
+        })),
+        reactions: service.reactions.map((reaction) => ({
+          name: reaction.name,
+          description: reaction.description,
+        })),
+      })),
+    },
+  };
 });
 
 // Register endpoint
@@ -297,6 +324,96 @@ fastify.post('/api/user/oauth/disconnect/:provider', async (request, reply) => {
   } catch (error) {
     fastify.log.error(error);
     return reply.status(500).send({ error: 'Failed to disconnect OAuth account' });
+  }
+});
+
+// Discord OAuth login initiation
+fastify.get('/api/auth/discord', async (request, reply) => {
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const redirectUri = process.env.DISCORD_CALLBACK_URL;
+  const scope = 'identify email';
+
+  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+
+  return reply.redirect(authUrl);
+});
+
+// Discord OAuth callback
+fastify.get('/api/auth/discord/callback', async (request, reply) => {
+  try {
+    const code = (request.query as any).code;
+    const error = (request.query as any).error;
+
+    if (error) {
+      return reply.status(401).send({ error: `Discord error: ${error}` });
+    }
+
+    if (!code) {
+      return reply.status(400).send({ error: 'No authorization code received' });
+    }
+
+    // Exchange code for token
+    const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID || '',
+        client_secret: process.env.DISCORD_CLIENT_SECRET || '',
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: process.env.DISCORD_CALLBACK_URL || '',
+      }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      return reply.status(401).send({ error: 'Failed to exchange code for token' });
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    // Fetch user info from Discord
+    const userResponse = await fetch('https://discord.com/api/users/@me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!userResponse.ok) {
+      return reply.status(401).send({ error: 'Failed to fetch user info' });
+    }
+
+    const discordUser = await userResponse.json();
+
+    // Find or create user with OAuth account
+    const user = await userService.findOrCreateOAuthUser('discord', discordUser.id, {
+      email: discordUser.email || `discord_${discordUser.username}@area.local`,
+      name: discordUser.username,
+      avatarUrl: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
+      accessToken: accessToken,
+    });
+
+    // Create session
+    const sessionToken = generateSessionToken();
+    await userService.createSession(user.id, sessionToken);
+    const jwtToken = generateAccessToken(user.id, user.email);
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+      },
+      accessToken: jwtToken,
+      sessionToken,
+    };
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
   }
 });
 
