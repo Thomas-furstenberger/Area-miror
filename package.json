@@ -22,7 +22,7 @@
     "lint:fix": "npm --workspace=server run lint:fix && npm --workspace=web run lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky install || true"
   },
   "devDependencies": {
     "husky": "^9.1.7",
