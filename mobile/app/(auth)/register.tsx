@@ -1,18 +1,34 @@
-/*
-** EPITECH PROJECT, 2025
-** Area-miror
-** File description:
-** register
-*/
-
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, Text } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Text, Alert } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { COLORS, FONTS } from '@/constants/theme';
+import { register } from '@/services/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
   
+  const handleRegister = async () => {
+    if (!email || !password || !name) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+    const result = await register(email, password, name);
+    setLoading(false);
+
+    if (result.success) {
+      Alert.alert('Succès', 'Compte créé ! Connectez-vous maintenant.');
+      router.replace('/(auth)/login');
+    } else {
+      Alert.alert('Erreur', result.error || "L'inscription a échoué");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.h1}>Nouveau ?</Text>
@@ -21,24 +37,35 @@ export default function RegisterScreen() {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
+          placeholder="Nom d'utilisateur"
+          placeholderTextColor="#999"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
           placeholder="Email"
           placeholderTextColor="#999"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
         <TextInput
           style={styles.input}
           placeholder="Mot de passe"
           placeholderTextColor="#999"
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmer mot de passe"
-          placeholderTextColor="#999"
+          value={password}
+          onChangeText={setPassword}
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-          <Text style={styles.buttonText}>CRÉER MON COMPTE</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && { opacity: 0.7 }]} 
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'CHARGEMENT...' : 'CRÉER MON COMPTE'}</Text>
         </TouchableOpacity>
 
         <Link href="/(auth)/login" asChild>

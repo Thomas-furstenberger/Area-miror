@@ -6,18 +6,35 @@
 */
 
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter, Link } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { login } from '@/services/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = () => {
-    router.replace('/(tabs)');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+    const result = await login(email, password);
+    setLoading(false);
+
+    if (result.success) {
+      await AsyncStorage.setItem('user_token', result.data.sessionToken);
+      router.replace('/(tabs)');
+    } else {
+      Alert.alert('Erreur', result.error || 'Identifiants incorrects');
+    }
   };
 
   return (
@@ -55,9 +72,14 @@ export default function LoginScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} activeOpacity={0.8}>
-            <Text style={styles.loginButtonText}>Se connecter</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          <TouchableOpacity 
+            style={[styles.loginButton, loading && { opacity: 0.7 }]} 
+            onPress={handleLogin} 
+            activeOpacity={0.8}
+            disabled={loading}
+          >
+            <Text style={styles.loginButtonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
+            {!loading && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
           </TouchableOpacity>
 
           <Link href="/(auth)/register" asChild>

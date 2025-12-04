@@ -5,21 +5,41 @@
 ** explore
 */
 
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { fetchAbout } from '@/services/api';
 
-const SERVICES = [
-  { id: '1', name: 'Google', icon: 'logo-google', connected: false },
-  { id: '2', name: 'GitHub', icon: 'logo-github', connected: true },
-  { id: '3', name: 'Discord', icon: 'logo-discord', connected: false },
-  { id: '4', name: 'Spotify', icon: 'musical-notes', connected: false },
-];
+const getIconName = (serviceName: string) => {
+  const name = serviceName.toLowerCase();
+  if (name.includes('google')) return 'logo-google';
+  if (name.includes('github')) return 'logo-github';
+  if (name.includes('discord')) return 'logo-discord';
+  if (name.includes('spotify')) return 'musical-notes';
+  if (name.includes('twitter') || name.includes('x')) return 'logo-twitter';
+  if (name.includes('weather')) return 'cloud';
+  if (name.includes('timer')) return 'time';
+  return 'cube';
+};
 
 export default function ServicesScreen() {
   const router = useRouter();
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      setLoading(true);
+      const result = await fetchAbout();
+      if (result.success && result.data.server && result.data.server.services) {
+        setServices(result.data.server.services);
+      }
+      setLoading(false);
+    };
+    loadServices();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,29 +48,44 @@ export default function ServicesScreen() {
         <Text style={styles.subtitleText}>Connectez vos applications</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-        {SERVICES.map((service) => (
-          <TouchableOpacity 
-            key={service.id} 
-            style={styles.card}
-            activeOpacity={0.7}
-            onPress={() => router.push({ pathname: "/create_area", params: { serviceId: service.id } })}
-          >
-            <View style={styles.iconWrapper}>
-              <Ionicons name={service.icon as any} size={32} color={COLORS.h1} />
-            </View>
-            
-            <Text style={styles.serviceName}>{service.name}</Text>
-            
-            <View style={[styles.statusBadge, { backgroundColor: service.connected ? '#E8F5E9' : '#F3F4F6' }]}>
-              <View style={[styles.statusDot, { backgroundColor: service.connected ? '#4CAF50' : COLORS.h2 }]} />
-              <Text style={[styles.statusText, { color: service.connected ? '#2E7D32' : COLORS.h2 }]}>
-                {service.connected ? 'Actif' : 'Déconnecté'}
+      {loading ? (
+        <View style={{flex: 1, justifyContent: 'center'}}>
+          <ActivityIndicator size="large" color={COLORS.link} />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+          {services.map((service, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={styles.card}
+              activeOpacity={0.7}
+              onPress={() => router.push({ 
+                pathname: "/create_area", 
+                params: { serviceData: JSON.stringify(service) } 
+              })}
+            >
+              <View style={styles.iconWrapper}>
+                <Ionicons name={getIconName(service.name) as any} size={32} color={COLORS.h1} />
+              </View>
+              
+              <Text style={styles.serviceName}>
+                {service.name.charAt(0).toUpperCase() + service.name.slice(1)}
               </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              
+              <View style={[styles.statusBadge, { backgroundColor: '#E8F5E9' }]}>
+                <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
+                <Text style={[styles.statusText, { color: '#2E7D32' }]}>Disponible</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+          
+          {services.length === 0 && (
+             <Text style={{textAlign: 'center', width: '100%', color: COLORS.text}}>
+               Aucun service trouvé sur le serveur.
+             </Text>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
