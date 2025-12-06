@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,49 +8,45 @@ datasource db {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  password      String?   // null if OAuth only
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String?
   name          String?
   avatarUrl     String?
-  emailVerified Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // OAuth connections
-  githubId      Int?      @unique
-  githubLogin   String?   @unique
-
-  sessions      Session[]
+  emailVerified Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  githubId      Int?           @unique
+  githubLogin   String?        @unique
   oauthAccounts OAuthAccount[]
+  sessions      Session[]
 
   @@map("users")
 }
 
 model OAuthAccount {
-  id            String    @id @default(cuid())
-  userId        Int
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider      String    // "github", "google", "facebook", etc.
+  id                String    @id @default(cuid())
+  userId            Int
+  provider          String
   providerAccountId String
-  accessToken   String?   @db.Text
-  refreshToken  String?   @db.Text
-  expiresAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("oauth_accounts")
 }
 
 model Session {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String    @unique @db.Text
+  token     String   @unique
   expiresAt DateTime
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
-

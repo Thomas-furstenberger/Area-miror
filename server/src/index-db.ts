@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { UserService } from './user.service';
 import { generateAccessToken, generateSessionToken } from './auth';
 import { SERVICES } from './services.config';
+import { GmailService } from './gmail.service';
 
 const fastify = Fastify({
   logger: true,
@@ -11,6 +12,7 @@ const fastify = Fastify({
 
 const prisma = new PrismaClient();
 const userService = new UserService(prisma);
+const gmailService = new GmailService(prisma);
 
 fastify.get('/', async (_request, _reply) => {
   return { message: 'Welcome to Area Server API' };
@@ -427,8 +429,132 @@ const start = async () => {
   }
 };
 
+// login with google
+fastify.get('/api/auth/google', async (request, reply) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+  
+  const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.modify';
+
+  if (!clientId || !redirectUri) {
+    return reply.status(500).send({ error: 'Configuration Google manquante (CLIENT_ID ou CALLBACK_URL)' });
+  }
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+  return reply.redirect(authUrl);
+});
+
+// Google OAuth callback
+fastify.get('/api/auth/google/callback', async (request, reply) => {
+  try {
+    const code = (request.query as any).code;
+    const error = (request.query as any).error;
+
+    if (error) {
+      return reply.status(401).send({ error: `Erreur Google: ${error}` });
+    }
+    if (!code) {
+      return reply.status(400).send({ error: 'Code d\'autorisation manquant' });
+    }
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: code,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: process.env.GOOGLE_CALLBACK_URL || '',
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errText = await tokenResponse.text();
+      return reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+
+    const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!userResponse.ok) {
+      return reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
+    }
+
+    const googleUser = await userResponse.json();
+
+    const user = await userService.findOrCreateOAuthUser('GOOGLE', googleUser.sub, {
+      email: googleUser.email,
+      name: googleUser.name || googleUser.given_name,
+      avatarUrl: googleUser.picture,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
+
+    const sessionToken = generateSessionToken();
+    await userService.createSession(user.id, sessionToken);
+    const jwtToken = generateAccessToken(user.id, user.email);
+
+    return reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
+
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
+  }
+});
+
+// Gmail send email
+fastify.post('/api/area/gmail/send_email', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return reply.status(401).send({ error: 'Token requis' });
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+    if (!session) return reply.status(401).send({ error: 'Session invalide ou expirée' });
+
+    const { to, subject, body } = request.body as any;
+
+    if (!to || !subject || !body) {
+      return reply.status(400).send({ 
+        error: 'Paramètres manquants', 
+        required: ['to', 'subject', 'body'] 
+      });
+    }
+
+    const result = await gmailService.sendEmail(session.user.id, to, subject, body);
+
+    return { 
+      success: true, 
+      message: 'Email envoyé avec succès', 
+      googleId: result.id
+    };
+
+  } catch (error) {
+    fastify.log.error(error);
+    if ((error as Error).message.includes('RefreshToken')) {
+        return reply.status(403).send({ error: 'L\'utilisateur n\'a pas connecté son compte Google.' });
+    }
+    return reply.status(500).send({ error: 'Échec de l\'envoi', details: (error as Error).message });
+  }
+});
+
 // Cleanup
 process.on('SIGTERM', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+// Close on Ctrl+C
+process.on('SIGINT', async () => {
+  console.log('Arrêt du serveur...');
+  await fastify.close();
   await prisma.$disconnect();
   process.exit(0);
 });
