@@ -429,8 +429,8 @@ const start = async () => {
   }
 };
 
-// login with google
-fastify.get('/api/auth/google', async (request, reply) => {
+// login with gmail google
+fastify.get('/api/auth/gmail', async (request, reply) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_CALLBACK_URL;
   
@@ -446,7 +446,7 @@ fastify.get('/api/auth/google', async (request, reply) => {
 });
 
 // Google OAuth callback
-fastify.get('/api/auth/google/callback', async (request, reply) => {
+fastify.get('/api/auth/gmail/callback', async (request, reply) => {
   try {
     const code = (request.query as any).code;
     const error = (request.query as any).error;
