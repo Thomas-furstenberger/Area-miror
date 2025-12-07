@@ -1,4 +1,6 @@
-import { PrismaClient, Area } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+
+type Area = Prisma.AreaGetPayload<{}>;
 import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { getServices, type Service, type Action, type Reaction } from '../services/api';
-import { ArrowRight, Plus, Save, Activity, Zap } from 'lucide-react';
+import { getServices, type Service } from '../services/api';
+import { ArrowRight, Save, Activity, Zap } from 'lucide-react';
 
 export default function DashboardPage() {
   const [services, setServices] = useState<Service[]>([]);

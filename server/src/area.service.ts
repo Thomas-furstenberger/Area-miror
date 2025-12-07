@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export class AreaService {
   constructor(private prisma: PrismaClient) {}
@@ -20,10 +20,10 @@ export class AreaService {
         description: data.description,
         actionService: data.actionService,
         actionType: data.actionType,
-        actionConfig: data.actionConfig || {},
+        actionConfig: (data.actionConfig || {}) as Prisma.InputJsonValue,
         reactionService: data.reactionService,
         reactionType: data.reactionType,
-        reactionConfig: data.reactionConfig || {},
+        reactionConfig: (data.reactionConfig || {}) as Prisma.InputJsonValue,
       },
     });
   }

@@ -1,6 +1,6 @@
 const BASE_URL = '/api/auth';
 
-const getAuthHeader = () => {
+const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('sessionToken');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
