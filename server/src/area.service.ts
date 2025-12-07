@@ -8,10 +8,10 @@ export class AreaService {
     description?: string;
     actionService: string;
     actionType: string;
-    actionConfig?: any;
+    actionConfig?: Record<string, unknown>;
     reactionService: string;
     reactionType: string;
-    reactionConfig?: any;
+    reactionConfig?: Record<string, unknown>;
   }) {
     return this.prisma.area.create({
       data: {

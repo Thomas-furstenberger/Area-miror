@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 export class GmailAction {
   constructor(private prisma: PrismaClient) {}
 
-  async checkEmailReceived(userId: number, config: any): Promise<boolean> {
+  async checkEmailReceived(userId: number, _config: unknown): Promise<boolean> {
     const oauthAccount = await this.prisma.oAuthAccount.findFirst({
       where: {
         userId,
