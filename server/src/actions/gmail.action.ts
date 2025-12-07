@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 export class GmailAction {
   constructor(private prisma: PrismaClient) {}
 
-  async checkEmailReceived(userId: number, config: any): Promise<boolean> {
+  async checkEmailReceived(userId: number, _config: unknown): Promise<boolean> {
     const oauthAccount = await this.prisma.oAuthAccount.findFirst({
       where: {
         userId,
@@ -85,7 +85,7 @@ export class GmailAction {
       );
 
       const messageData = await messageResponse.json();
-      const subjectHeader = messageData.payload?.headers?.find((h: any) => h.name === 'Subject');
+      const subjectHeader = messageData.payload?.headers?.find((h: { name: string; value: string }) => h.name === 'Subject');
 
       return subjectHeader?.value || 'No subject';
     } catch (error) {

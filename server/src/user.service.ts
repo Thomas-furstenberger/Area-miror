@@ -81,7 +81,7 @@ export class UserService {
     });
 
     if (oauthAccount) {
-      const dataToUpdate: any = {};
+      const dataToUpdate: { accessToken?: string; refreshToken?: string; expiresAt?: Date } = {};
       
       if (userData.accessToken) dataToUpdate.accessToken = userData.accessToken;
       if (userData.refreshToken) dataToUpdate.refreshToken = userData.refreshToken;

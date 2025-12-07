@@ -27,6 +27,21 @@ const gmailService = new GmailService(prisma);
 const areaService = new AreaService(prisma);
 const hookExecutor = new HookExecutor(prisma);
 
+interface CreateAreaRequest {
+  name: string;
+  description?: string;
+  actionService: string;
+  actionType: string;
+  actionConfig: Record<string, unknown>;
+  reactionService: string;
+  reactionType: string;
+  reactionConfig: Record<string, unknown>;
+}
+
+interface IdParams {
+  id: string;
+}
+
 fastify.get('/', async (_request, _reply) => {
   return { message: 'Welcome to Area Server API' };
 });
@@ -248,7 +263,6 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     // Create session
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
-    const jwtToken = generateAccessToken(user.id, user.email);
 
     return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
   } catch (error) {
@@ -411,7 +425,6 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
     // Create session
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
-    const jwtToken = generateAccessToken(user.id, user.email);
 
     return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
   } catch (error) {
@@ -511,7 +524,6 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
 
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
-    //const jwtToken = generateAccessToken(user.id, user.email);
 
     return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
 
@@ -532,7 +544,7 @@ fastify.post('/api/areas', async (request, reply) => {
     const session = await userService.getSessionByToken(token);
     if (!session) return reply.status(401).send({ error: 'Invalid session' });
 
-    const { name, description, actionService, actionType, actionConfig, reactionService, reactionType, reactionConfig } = request.body as any;
+    const { name, description, actionService, actionType, actionConfig, reactionService, reactionType, reactionConfig } = request.body as CreateAreaRequest;
 
     if (!name || !actionService || !actionType || !reactionService || !reactionType) {
       return reply.status(400).send({ error: 'Missing required fields' });
@@ -585,7 +597,7 @@ fastify.put('/api/areas/:id/toggle', async (request, reply) => {
     const session = await userService.getSessionByToken(token);
     if (!session) return reply.status(401).send({ error: 'Invalid session' });
 
-    const { id } = request.params as any;
+    const { id } = request.params as IdParams;
 
     const area = await areaService.toggleArea(id, session.user.id);
 
@@ -606,7 +618,7 @@ fastify.delete('/api/areas/:id', async (request, reply) => {
     const session = await userService.getSessionByToken(token);
     if (!session) return reply.status(401).send({ error: 'Invalid session' });
 
-    const { id } = request.params as any;
+    const { id } = request.params as IdParams;
 
     await areaService.deleteArea(id, session.user.id);
 
@@ -724,7 +736,6 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
 
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
-    //const jwtToken = generateAccessToken(user.id, user.email);
 
     return _reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
 

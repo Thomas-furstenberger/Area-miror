@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Area } from '@prisma/client';
 import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';
@@ -50,7 +50,7 @@ export class HookExecutor {
     }
   }
 
-  private async processArea(area: any) {
+  private async processArea(area: Area) {
     console.log(`[Hook Executor] Processing area: ${area.name} (${area.id})`);
 
     const lastTriggered = this.lastTriggeredAreas.get(area.id);
@@ -66,11 +66,11 @@ export class HookExecutor {
       triggered = await this.gmailAction.checkEmailReceived(area.userId, area.actionConfig);
     } else if (area.actionService === 'timer') {
       if (area.actionType === 'time_reached') {
-        triggered = this.timerAction.checkTimeReached(area.actionConfig);
+        triggered = this.timerAction.checkTimeReached(area.actionConfig as { hour: number; minute: number });
       } else if (area.actionType === 'date_reached') {
-        triggered = this.timerAction.checkDateReached(area.actionConfig);
+        triggered = this.timerAction.checkDateReached(area.actionConfig as { date: string });
       } else if (area.actionType === 'day_of_week') {
-        triggered = this.timerAction.checkDayOfWeek(area.actionConfig);
+        triggered = this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
       }
     }
 
@@ -82,35 +82,37 @@ export class HookExecutor {
     this.lastTriggeredAreas.set(area.id, now);
 
     if (area.reactionService === 'discord' && area.reactionType === 'send_message') {
-      const webhookUrl = area.reactionConfig?.webhookUrl;
+      const reactionConfig = area.reactionConfig as { webhookUrl?: string; message?: string };
+      const webhookUrl = reactionConfig?.webhookUrl;
 
       if (!webhookUrl) {
         console.error(`[Hook Executor] No webhook URL configured for area ${area.id}`);
         return;
       }
 
-      let message = area.reactionConfig?.message || 'AREA triggered!';
+      let message = reactionConfig?.message || 'AREA triggered!';
 
       if (area.actionService === 'gmail') {
         const emailSubject = await this.gmailAction.getLatestEmailSubject(area.userId);
-        message = area.reactionConfig?.message || `📧 New email received: ${emailSubject}`;
+        message = reactionConfig?.message || `📧 New email received: ${emailSubject}`;
       } else if (area.actionService === 'timer') {
         if (area.actionType === 'time_reached') {
-          const { hour, minute } = area.actionConfig;
-          message = area.reactionConfig?.message || `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
+          const { hour, minute } = area.actionConfig as { hour: number; minute: number };
+          message = reactionConfig?.message || `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
         } else if (area.actionType === 'date_reached') {
-          const { date } = area.actionConfig;
-          message = area.reactionConfig?.message || `📅 Date alert: ${date}`;
+          const { date } = area.actionConfig as { date: string };
+          message = reactionConfig?.message || `📅 Date alert: ${date}`;
         } else if (area.actionType === 'day_of_week') {
           const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          const dayName = days[area.actionConfig.dayOfWeek];
-          message = area.reactionConfig?.message || `📆 It's ${dayName}!`;
+          const { dayOfWeek } = area.actionConfig as { dayOfWeek: number };
+          const dayName = days[dayOfWeek];
+          message = reactionConfig?.message || `📆 It's ${dayName}!`;
         }
       }
 
       await this.discordReaction.sendMessage(webhookUrl, message);
     } else if (area.reactionService === 'gmail' && area.reactionType === 'send_email') {
-      const { to, subject, body } = area.reactionConfig;
+      const { to, subject, body } = area.reactionConfig as { to: string; subject: string; body: string };
 
       if (!to || !subject || !body) {
         console.error(`[Hook Executor] Missing email configuration for area ${area.id}`);
