@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { UserRepository } from './user.repository';
 import { SessionRepository } from './session.repository';
-import { generateToken, verifyToken } from './auth.utils';
+import { generateToken } from './auth.utils';
 
 const fastify = Fastify({
   logger: true,

@@ -7,7 +7,16 @@ const fastify = Fastify({
 });
 
 // In-memory store for sessions (in production, use a database)
-const sessions = new Map<string, any>();
+interface SimpleSession {
+  userId: number;
+  login: string;
+  email: string | null;
+  name: string | null;
+  avatarUrl: string;
+  accessToken?: string;
+  createdAt: Date;
+}
+const sessions = new Map<string, SimpleSession>();
 
 fastify.get('/', async (_request, _reply) => {
   return { message: 'Welcome to Area Server API' };
@@ -31,8 +40,9 @@ fastify.get('/api/auth/github', async (request, reply) => {
 // Handle GitHub callback
 fastify.get('/api/auth/github/callback', async (request, reply) => {
   try {
-    const code = (request.query as any).code;
-    const error = (request.query as any).error;
+    const query = request.query as { code?: string; error?: string };
+    const code = query.code;
+    const error = query.error;
 
     if (error) {
       return reply.status(401).send({ error: `GitHub error: ${error}` });
