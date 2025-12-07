@@ -1138,6 +1138,9 @@ fastify.get('/api/github/repos', async (request, _reply) => {
 
 // Cleanup
 process.on('SIGTERM', async () => {
+  console.log('Arrêt du serveur...');
+  hookExecutor.stop();
+  await fastify.close();
   await prisma.$disconnect();
   process.exit(0);
 });
@@ -1145,6 +1148,7 @@ process.on('SIGTERM', async () => {
 // Close on Ctrl+C
 process.on('SIGINT', async () => {
   console.log('Arrêt du serveur...');
+  hookExecutor.stop();
   await fastify.close();
   await prisma.$disconnect();
   process.exit(0);

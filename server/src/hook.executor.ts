@@ -33,6 +33,7 @@ export class HookExecutor {
   private githubAction: GithubAction;
   private isRunning: boolean = false;
   private lastTriggeredAreas: Map<string, Date> = new Map();
+  private intervalId: NodeJS.Timeout | null = null;
 
   constructor(private prisma: PrismaClient) {
     this.areaService = new AreaService(prisma);
@@ -157,8 +158,16 @@ export class HookExecutor {
 
     this.execute();
 
-    setInterval(() => {
+    this.intervalId = setInterval(() => {
       this.execute();
     }, intervalMinutes * 60 * 1000);
+  }
+
+  stop() {
+    console.log('[Hook Executor] Stopping...');
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 }

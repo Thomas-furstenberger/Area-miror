@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { GmailService } from '../gmail.service';
+import { GmailService } from '../reactions/gmail.reaction';
 
 export class GmailAction {
   private gmailService: GmailService;

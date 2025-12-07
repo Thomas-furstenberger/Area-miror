@@ -56,11 +56,7 @@ export class GmailService {
       throw new Error(`Impossible de rafraîchir le token: ${errorText}`);
     }
 
-<<<<<<< HEAD:server/src/reactions/gmail.reaction.ts
     const data = await response.json() as { access_token: string; refresh_token?: string; expires_in: number };
-=======
-    const data = await response.json();
->>>>>>> 4c22f6b (feat(frontend): we can now connect and create new working areas):server/src/gmail.service.ts
 
     const newExpiresAt = new Date(Date.now() + data.expires_in * 1000);
 
