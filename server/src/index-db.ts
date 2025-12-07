@@ -20,6 +20,8 @@ fastify.register(cors, {
     'http://localhost:8081',
     'http://172.20.10.10:3000',
     'http://172.20.10.10:8081',
+    'https://web-production-963ad.up.railway.app',
+    'https://mobile-production-e73e.up.railway.app',
     /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // Allow local network IPs
     /^http:\/\/172\.\d+\.\d+\.\d+:\d+$/, // Allow 172.x.x.x IPs
     /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,  // Allow 10.x.x.x IPs
@@ -272,7 +274,8 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
 
-    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
@@ -434,7 +437,8 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
 
-    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
@@ -623,7 +627,8 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       `);
     }
 
-    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
 
   } catch (error) {
     fastify.log.error(error);

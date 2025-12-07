@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-
-const API_URL = 'http://localhost:3000';
+import { API_URL } from '../config';
 
 export default function LoginPage() {
   const handleGoogleLogin = () => {
