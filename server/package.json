@@ -24,12 +24,14 @@
     "@prisma/client": "^6.19.0",
     "bcrypt": "^6.0.0",
     "dotenv": "^16.4.7",
+    "effect": "^3.18.4",
     "fastify": "^5.6.2",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.1",
     "prettier": "^3.6.2",
     "prisma": "^6.19.0",
