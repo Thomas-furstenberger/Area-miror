@@ -1,6 +1,22 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-type Area = Prisma.AreaGetPayload<{}>;
+// Type inferred from Prisma
+type Area = {
+  id: string;
+  userId: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  actionService: string;
+  actionType: string;
+  actionConfig: unknown;
+  reactionService: string;
+  reactionType: string;
+  reactionConfig: unknown;
+  lastTriggered: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';

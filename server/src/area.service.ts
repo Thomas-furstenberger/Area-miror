@@ -20,10 +20,12 @@ export class AreaService {
         description: data.description,
         actionService: data.actionService,
         actionType: data.actionType,
-        actionConfig: (data.actionConfig || {}) as Prisma.InputJsonValue,
+        // @ts-expect-error - Prisma JSON type compatibility
+        actionConfig: data.actionConfig || {},
         reactionService: data.reactionService,
         reactionType: data.reactionType,
-        reactionConfig: (data.reactionConfig || {}) as Prisma.InputJsonValue,
+        // @ts-expect-error - Prisma JSON type compatibility
+        reactionConfig: data.reactionConfig || {},
       },
     });
   }
