@@ -41,15 +41,60 @@ export default function LoginScreen() {
     try {
       const ip = await AsyncStorage.getItem('server_ip');
       const port = await AsyncStorage.getItem('server_port');
-      const url = `http://${ip}:${port}/api/auth/${provider}`;
+      const url = `http://${ip}:${port}/api/auth/${provider}?state=mobile`;
 
-      // Open OAuth in browser
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert('Erreur', 'Impossible d\'ouvrir le navigateur');
-      }
+      Alert.alert(
+        'Connexion OAuth',
+        `Après connexion, vous recevrez un token. Copiez-le et revenez à l'application.`,
+        [
+          {
+            text: 'Annuler',
+            style: 'cancel',
+          },
+          {
+            text: 'Continuer',
+            onPress: async () => {
+              const supported = await Linking.canOpenURL(url);
+              if (supported) {
+                await Linking.openURL(url);
+
+                // Show prompt to enter token after OAuth
+                setTimeout(() => {
+                  Alert.prompt(
+                    'Token reçu',
+                    'Collez le token copié depuis le navigateur :',
+                    [
+                      {
+                        text: 'Annuler',
+                        style: 'cancel',
+                      },
+                      {
+                        text: 'Valider',
+                        onPress: async (token) => {
+                          if (token && token.trim()) {
+                            await AsyncStorage.setItem('user_token', token.trim());
+                            Alert.alert('Succès', 'Connexion réussie !', [
+                              {
+                                text: 'OK',
+                                onPress: () => router.replace('/(tabs)'),
+                              },
+                            ]);
+                          } else {
+                            Alert.alert('Erreur', 'Token invalide');
+                          }
+                        },
+                      },
+                    ],
+                    'plain-text'
+                  );
+                }, 2000);
+              } else {
+                Alert.alert('Erreur', 'Impossible d\'ouvrir le navigateur');
+              }
+            },
+          },
+        ]
+      );
     } catch (error) {
       Alert.alert('Erreur', 'Erreur lors de la connexion OAuth');
     }

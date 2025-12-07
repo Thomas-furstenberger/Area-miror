@@ -20,7 +20,7 @@ export class UserRepository {
 
   async findByLogin(login: string) {
     return this.prisma.user.findUnique({
-      where: { login },
+      where: { githubLogin: login },
     });
   }
 
@@ -28,18 +28,16 @@ export class UserRepository {
     return this.prisma.user.upsert({
       where: { githubId: data.githubId },
       update: {
-        email: data.email,
+        email: data.email || '',
         name: data.name,
         avatarUrl: data.avatarUrl,
-        accessToken: data.accessToken,
       },
       create: {
         githubId: data.githubId,
-        login: data.login,
-        email: data.email,
+        githubLogin: data.login,
+        email: data.email || '',
         name: data.name,
         avatarUrl: data.avatarUrl,
-        accessToken: data.accessToken,
       },
     });
   }

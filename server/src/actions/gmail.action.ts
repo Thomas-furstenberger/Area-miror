@@ -31,7 +31,7 @@ export class GmailAction {
         return false;
       }
 
-      const data = await response.json();
+      const data = await response.json() as { messages?: Array<{ id: string }> };
 
       if (data.messages && data.messages.length > 0) {
         console.log(`[Gmail Action] Found ${data.messages.length} unread emails for user ${userId}`);
@@ -67,7 +67,7 @@ export class GmailAction {
         }
       );
 
-      const listData = await listResponse.json();
+      const listData = await listResponse.json() as { messages?: Array<{ id: string }> };
 
       if (!listData.messages || listData.messages.length === 0) {
         return 'No emails found';
@@ -84,8 +84,8 @@ export class GmailAction {
         }
       );
 
-      const messageData = await messageResponse.json();
-      const subjectHeader = messageData.payload?.headers?.find((h: any) => h.name === 'Subject');
+      const messageData = await messageResponse.json() as { payload?: { headers?: Array<{ name: string; value: string }> } };
+      const subjectHeader = messageData.payload?.headers?.find((h: { name: string; value: string }) => h.name === 'Subject');
 
       return subjectHeader?.value || 'No subject';
     } catch (error) {

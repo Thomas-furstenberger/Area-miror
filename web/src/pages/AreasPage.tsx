@@ -28,6 +28,11 @@ export default function AreasPage() {
     reactionType: 'send_message',
     webhookUrl: '',
     message: '',
+    // Timer config fields
+    timerHour: '12',
+    timerMinute: '0',
+    timerDate: '',
+    timerDayOfWeek: '1',
   });
 
   useEffect(() => {
@@ -66,6 +71,21 @@ export default function AreasPage() {
     }
 
     try {
+      // Build actionConfig based on service and type
+      let actionConfig = {};
+      if (formData.actionService === 'timer') {
+        if (formData.actionType === 'time_reached') {
+          actionConfig = {
+            hour: parseInt(formData.timerHour),
+            minute: parseInt(formData.timerMinute),
+          };
+        } else if (formData.actionType === 'date_reached') {
+          actionConfig = { date: formData.timerDate };
+        } else if (formData.actionType === 'day_of_week') {
+          actionConfig = { dayOfWeek: parseInt(formData.timerDayOfWeek) };
+        }
+      }
+
       const response = await fetch(`${API_URL}/api/areas`, {
         method: 'POST',
         headers: {
@@ -77,7 +97,7 @@ export default function AreasPage() {
           description: formData.description,
           actionService: formData.actionService,
           actionType: formData.actionType,
-          actionConfig: {},
+          actionConfig,
           reactionService: formData.reactionService,
           reactionType: formData.reactionType,
           reactionConfig: {
@@ -101,6 +121,10 @@ export default function AreasPage() {
           reactionType: 'send_message',
           webhookUrl: '',
           message: '',
+          timerHour: '12',
+          timerMinute: '0',
+          timerDate: '',
+          timerDayOfWeek: '1',
         });
         fetchAreas();
       } else {
@@ -313,6 +337,97 @@ export default function AreasPage() {
                 </div>
               </div>
             </div>
+
+            {formData.actionService === 'timer' && (
+              <div style={{ marginBottom: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>
+                <h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#6366f1' }}>Action Configuration</h3>
+
+                {formData.actionType === 'time_reached' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Hour (0-23) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={formData.timerHour}
+                        onChange={(e) => setFormData({ ...formData, timerHour: e.target.value })}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Minute (0-59) *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={formData.timerMinute}
+                        onChange={(e) => setFormData({ ...formData, timerMinute: e.target.value })}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {formData.actionType === 'date_reached' && (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Date *</label>
+                    <input
+                      type="date"
+                      value={formData.timerDate}
+                      onChange={(e) => setFormData({ ...formData, timerDate: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {formData.actionType === 'day_of_week' && (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Day of Week *</label>
+                    <select
+                      value={formData.timerDayOfWeek}
+                      onChange={(e) => setFormData({ ...formData, timerDayOfWeek: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                      }}
+                    >
+                      <option value="0">Sunday</option>
+                      <option value="1">Monday</option>
+                      <option value="2">Tuesday</option>
+                      <option value="3">Wednesday</option>
+                      <option value="4">Thursday</option>
+                      <option value="5">Friday</option>
+                      <option value="6">Saturday</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ marginBottom: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Reaction Configuration</h3>

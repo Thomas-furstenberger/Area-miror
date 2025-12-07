@@ -15,7 +15,15 @@ const fastify = Fastify({
 
 // Register CORS to allow frontend requests
 fastify.register(cors, {
-  origin: ['http://localhost:5173', 'http://localhost:8081'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:8081',
+    'http://172.20.10.10:3000',
+    'http://172.20.10.10:8081',
+    /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // Allow local network IPs
+    /^http:\/\/172\.\d+\.\d+\.\d+:\d+$/, // Allow 172.x.x.x IPs
+    /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/,  // Allow 10.x.x.x IPs
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -459,7 +467,7 @@ fastify.get('/api/auth/gmail', async (request, _reply) => {
 // Google gmail OAuth callback
 fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
   try {
-    const query = request.query as { code?: string; error?: string };
+    const query = request.query as { code?: string; error?: string; state?: string };
     const code = query.code;
     const error = query.error;
 
@@ -512,6 +520,96 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
     //const jwtToken = generateAccessToken(user.id, user.email);
+
+    // Check if request is from mobile (via state parameter or user-agent)
+    const isMobile = query.state === 'mobile';
+
+    if (isMobile) {
+      // For mobile, return a simple HTML page that displays the token
+      return _reply.type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Login Success</title>
+            <style>
+              body {
+                font-family: system-ui, -apple-system, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+              }
+              .container {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 30px;
+                border-radius: 20px;
+                text-align: center;
+                max-width: 400px;
+              }
+              h1 { margin: 0 0 20px 0; font-size: 24px; }
+              .token {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 15px;
+                border-radius: 10px;
+                word-break: break-all;
+                font-family: monospace;
+                font-size: 12px;
+                margin: 20px 0;
+              }
+              button {
+                background: white;
+                color: #667eea;
+                border: none;
+                padding: 12px 30px;
+                border-radius: 25px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                margin: 10px;
+              }
+              .success { font-size: 48px; margin-bottom: 10px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success">✅</div>
+              <h1>Connexion réussie !</h1>
+              <p>Copiez votre token et retournez à l'application :</p>
+              <div class="token" id="token">${sessionToken}</div>
+              <button onclick="copyToken()">📋 Copier le token</button>
+              <p style="font-size: 12px; margin-top: 20px; opacity: 0.8;">
+                Fermez cette page après avoir copié le token
+              </p>
+            </div>
+            <script>
+              function copyToken() {
+                const token = document.getElementById('token').textContent;
+                navigator.clipboard.writeText(token).then(() => {
+                  alert('Token copié ! Retournez à l\\'application et collez-le.');
+                }).catch(() => {
+                  // Fallback for older browsers
+                  const textArea = document.createElement('textarea');
+                  textArea.value = token;
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  alert('Token copié ! Retournez à l\\'application et collez-le.');
+                });
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    }
 
     return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
 

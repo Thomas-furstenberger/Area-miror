@@ -44,8 +44,8 @@ export class GmailService {
       throw new Error(`Impossible de rafraîchir le token: ${await response.text()}`);
     }
 
-    const data = await response.json();
-    
+    const data = await response.json() as { access_token: string; refresh_token?: string; expires_in: number };
+
     const newExpiresAt = new Date(Date.now() + data.expires_in * 1000);
 
     await this.prisma.oAuthAccount.update({
@@ -53,7 +53,7 @@ export class GmailService {
       data: {
         accessToken: data.access_token,
         expiresAt: newExpiresAt,
-        refreshToken: data.refresh_token || refreshToken, 
+        refreshToken: data.refresh_token || refreshToken,
       },
     });
 
