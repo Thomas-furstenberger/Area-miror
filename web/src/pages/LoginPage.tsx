@@ -36,53 +36,99 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-8">Connexion</h1>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F1DAC4]">
+      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-xl border border-[#A69CAC]/30">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-[#F1DAC4] rounded-full">
+              <LogIn size={32} className="text-[#474973]" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-[#474973]">Connexion</h1>
+          <p className="text-[#A69CAC] mt-2 font-medium">Bon retour parmi nous</p>
+        </div>
 
-        {message && <div className="bg-green-50 text-green-700 p-3 rounded mb-4">{message}</div>}
-        {error && <div className="bg-red-50 text-red-700 p-3 rounded mb-4">{error}</div>}
+        {message && (
+          <div className="bg-green-50 text-green-700 p-3 rounded mb-4 border border-green-200">
+            {message}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded mb-4 flex items-center border border-red-200">
+            <AlertCircle size={20} className="mr-2" />
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button
             onClick={() => handleOAuthLogin('github')}
-            className="flex items-center justify-center p-2 border rounded hover:bg-gray-50"
+            className="flex items-center justify-center p-2 border border-[#A69CAC] rounded text-[#161B33] hover:bg-gray-50 transition-colors"
           >
             <Github size={20} className="mr-2" /> GitHub
           </button>
           <button
             onClick={() => handleOAuthLogin('discord')}
-            className="flex items-center justify-center p-2 border rounded bg-[#5865F2] text-white hover:bg-[#4752C4]"
+            className="flex items-center justify-center p-2 border border-[#A69CAC] rounded bg-[#5865F2] text-white hover:opacity-90 transition-opacity"
           >
             Discord
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-3 border rounded-lg"
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <input
-            type="password"
-            placeholder="Mot de passe"
-            className="w-full p-3 border rounded-lg"
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          />
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#A69CAC]/30"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-[#A69CAC]">Ou avec email</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-[#474973] mb-1">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-[#A69CAC]" size={20} />
+              <input
+                type="email"
+                required
+                placeholder="exemple@email.com"
+                className="w-full pl-10 p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-[#474973] mb-1">Mot de passe</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-[#A69CAC]" size={20} />
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                className="w-full pl-10 p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+          </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-[#474973] text-white font-bold p-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md"
           >
             {isLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Se connecter'}
           </button>
         </form>
-        <Link to="/register" className="block text-center mt-4 text-blue-600">
-          Pas de compte ?
-        </Link>
+
+        <div className="mt-6 text-center">
+          <p className="text-[#161B33]">
+            Pas de compte ?{' '}
+            <Link to="/register" className="font-bold text-[#474973] hover:underline">
+              S'inscrire
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

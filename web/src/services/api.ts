@@ -1,19 +1,11 @@
-// web/src/services/api.ts
-
 const BASE_URL = '/api/auth';
 
-// --- MODIFICATION ICI ---
 const getAuthHeader = () => {
-  // Le backend (index-db.ts) valide la session via la base de données.
-  // Il a besoin du 'sessionToken', pas du 'accessToken'.
   const token = localStorage.getItem('sessionToken');
-
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
-// ------------------------
 
 export const register = async (email: string, password: string, name: string) => {
-  // ... (le reste ne change pas)
   try {
     const response = await fetch(`${BASE_URL}/register`, {
       method: 'POST',
@@ -29,7 +21,6 @@ export const register = async (email: string, password: string, name: string) =>
 };
 
 export const login = async (email: string, password: string) => {
-  // ... (le reste ne change pas)
   try {
     const response = await fetch(`${BASE_URL}/login`, {
       method: 'POST',
@@ -45,13 +36,12 @@ export const login = async (email: string, password: string) => {
 };
 
 export const me = async () => {
-  // ... (le reste ne change pas)
   try {
     const response = await fetch(`${BASE_URL}/user`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(), // Utilisera maintenant le bon token
+        ...getAuthHeader(),
       },
     });
 
@@ -70,4 +60,33 @@ export const logout = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('sessionToken');
   window.location.href = '/login';
+};
+
+export interface Action {
+  name: string;
+  description: string;
+}
+
+export interface Reaction {
+  name: string;
+  description: string;
+}
+
+export interface Service {
+  name: string;
+  actions: Action[];
+  reactions: Reaction[];
+}
+
+export const getServices = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/about.json');
+    if (!response.ok) throw new Error('Network response was not ok');
+
+    const data = await response.json();
+    return data.server?.services || [];
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    return [];
+  }
 };
