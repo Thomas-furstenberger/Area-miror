@@ -432,7 +432,7 @@ const start = async () => {
 // login with gmail google
 fastify.get('/api/auth/gmail', async (request, reply) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+  const redirectUri = process.env.GMAIL_CALLBACK_URL;
   
   const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.modify';
 
@@ -445,7 +445,7 @@ fastify.get('/api/auth/gmail', async (request, reply) => {
   return reply.redirect(authUrl);
 });
 
-// Google OAuth callback
+// Google gmail OAuth callback
 fastify.get('/api/auth/gmail/callback', async (request, reply) => {
   try {
     const code = (request.query as any).code;
@@ -499,7 +499,7 @@ fastify.get('/api/auth/gmail/callback', async (request, reply) => {
 
     const sessionToken = generateSessionToken();
     await userService.createSession(user.id, sessionToken);
-    const jwtToken = generateAccessToken(user.id, user.email);
+    //const jwtToken = generateAccessToken(user.id, user.email);
 
     return reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
 
@@ -542,6 +542,86 @@ fastify.post('/api/area/gmail/send_email', async (request, reply) => {
         return reply.status(403).send({ error: 'L\'utilisateur n\'a pas connecté son compte Google.' });
     }
     return reply.status(500).send({ error: 'Échec de l\'envoi', details: (error as Error).message });
+  }
+});
+
+// login with google drive
+fastify.get('/api/auth/google-drive', async (request, reply) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.DRIVE_CALLBACK_URL;
+  
+  const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive';
+
+  if (!clientId || !redirectUri) {
+    return reply.status(500).send({ error: 'Configuration Google manquante' });
+  }
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+  return reply.redirect(authUrl);
+});
+
+// Google drive OAuth callback
+fastify.get('/api/auth/drive/callback', async (request, reply) => {
+  try {
+    const code = (request.query as any).code;
+    const error = (request.query as any).error;
+
+    if (error) {
+      return reply.status(401).send({ error: `Erreur Google: ${error}` });
+    }
+    if (!code) {
+      return reply.status(400).send({ error: 'Code d\'autorisation manquant' });
+    }
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code: code,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: process.env.GOOGLE_CALLBACK_URL || '',
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errText = await tokenResponse.text();
+      return reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    const refreshToken = tokenData.refresh_token;
+
+    const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!userResponse.ok) {
+      return reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
+    }
+
+    const googleUser = await userResponse.json();
+
+    const user = await userService.findOrCreateOAuthUser('GOOGLE_DRIVE', googleUser.sub, {
+      email: googleUser.email,
+      name: googleUser.name || googleUser.given_name,
+      avatarUrl: googleUser.picture,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
+
+    const sessionToken = generateSessionToken();
+    await userService.createSession(user.id, sessionToken);
+    //const jwtToken = generateAccessToken(user.id, user.email);
+
+    return reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
+
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
   }
 });
 

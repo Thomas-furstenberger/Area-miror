@@ -5,7 +5,11 @@ export class GmailService {
 
   async getValidToken(userId: number): Promise<string> {
     const oauthAccount = await this.prisma.oAuthAccount.findFirst({
-      where: { userId, provider: 'GOOGLE' }, //
+      where: { 
+        userId, 
+        provider: { in: ['GOOGLE', 'GOOGLE_DRIVE'] }
+      },
+      orderBy: { updatedAt: 'desc' }
     });
 
     if (!oauthAccount || !oauthAccount.refreshToken) {
