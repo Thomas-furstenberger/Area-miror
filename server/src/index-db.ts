@@ -5,7 +5,7 @@ import 'dotenv/config';
 import { UserService } from './user.service';
 import { generateAccessToken, generateSessionToken } from './auth';
 import { SERVICES } from './services.config';
-import { GmailService } from './gmail.service';
+import { GmailService } from './reactions/gmail.reaction';
 import { AreaService } from './area.service';
 import { HookExecutor } from './hook.executor';
 
@@ -840,6 +840,75 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
+  }
+});
+
+// Get GitHub repositories
+fastify.get('/api/github/repos', async (request, _reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return _reply.status(401).send({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+
+    if (!session) {
+      return _reply.status(401).send({ error: 'Invalid token' });
+    }
+
+    const oauthAccount = await prisma.oAuthAccount.findFirst({
+      where: {
+        userId: session.user.id,
+        provider: 'github', 
+      },
+    });
+
+    if (!oauthAccount || !oauthAccount.accessToken) {
+      return _reply.status(404).send({ error: 'Aucun compte GitHub connecté pour cet utilisateur.' });
+    }
+
+    const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
+      headers: {
+        'Authorization': `Bearer ${oauthAccount.accessToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'Area-App'
+      },
+    });
+
+    if (!response.ok) {
+      return _reply.status(response.status).send({ error: 'Impossible de récupérer les repos depuis GitHub' });
+    }
+
+    interface GitHubRepoData {
+      id: number;
+      name: string;
+      full_name: string;
+      private: boolean;
+      html_url: string;
+      description: string | null;
+    }
+
+    const repos = await response.json() as GitHubRepoData[];
+
+    const formattedRepos = Array.isArray(repos) ? repos.map((repo) => ({
+      id: repo.id,
+      name: repo.name,
+      fullName: repo.full_name,
+      private: repo.private,
+      htmlUrl: repo.html_url,
+      description: repo.description
+    })) : [];
+
+    return {
+      success: true,
+      repositories: formattedRepos
+    };
+
+  } catch (error) {
+    fastify.log.error(error);
+    return _reply.status(500).send({ error: 'Erreur serveur lors de la récupération des repos' });
   }
 });
 

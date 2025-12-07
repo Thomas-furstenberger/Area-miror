@@ -21,7 +21,8 @@ import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';
 import { DiscordReaction } from './reactions/discord.reaction';
-import { GmailService } from './gmail.service';
+import { GmailService } from './reactions/gmail.reaction';
+import { GithubAction } from './actions/github.action';
 
 export class HookExecutor {
   private areaService: AreaService;
@@ -29,6 +30,7 @@ export class HookExecutor {
   private timerAction: TimerAction;
   private discordReaction: DiscordReaction;
   private gmailService: GmailService;
+  private githubAction: GithubAction;
   private isRunning: boolean = false;
   private lastTriggeredAreas: Map<string, Date> = new Map();
 
@@ -38,6 +40,7 @@ export class HookExecutor {
     this.timerAction = new TimerAction();
     this.discordReaction = new DiscordReaction();
     this.gmailService = new GmailService(prisma);
+    this.githubAction = new GithubAction(prisma);
   }
 
   async execute() {
@@ -82,6 +85,12 @@ export class HookExecutor {
 
     if (area.actionService === 'gmail' && area.actionType === 'email_received') {
       triggered = await this.gmailAction.checkEmailReceived(area.userId, area.actionConfig);
+    } else if (area.actionService === 'github' && area.actionType === 'pull_request_opened') {
+      triggered = await this.githubAction.checkPullRequestOpened(
+        area.userId, 
+        area.actionConfig, 
+        area.lastTriggered
+      );
     } else if (area.actionService === 'timer') {
       if (area.actionType === 'time_reached') {
         triggered = this.timerAction.checkTimeReached(area.actionConfig as { hour: number; minute: number });
