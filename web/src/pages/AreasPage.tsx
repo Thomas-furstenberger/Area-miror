@@ -14,6 +14,7 @@ interface Area {
 }
 
 export default function AreasPage() {
+  const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function AreasPage() {
   }, []);
 
   const fetchAreas = async () => {
-    const token = localStorage.getItem('user_token');
+    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -62,7 +63,7 @@ export default function AreasPage() {
     e.preventDefault();
     setLoading(true);
 
-    const token = localStorage.getItem('user_token');
+    const token = localStorage.getItem('token');
     if (!token) {
       alert('Please login first');
       setLoading(false);
@@ -138,7 +139,7 @@ export default function AreasPage() {
   };
 
   const toggleArea = async (id: string) => {
-    const token = localStorage.getItem('user_token');
+    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -161,7 +162,7 @@ export default function AreasPage() {
   const deleteArea = async (id: string) => {
     if (!confirm('Are you sure you want to delete this AREA?')) return;
 
-    const token = localStorage.getItem('user_token');
+    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -183,13 +184,20 @@ export default function AreasPage() {
 
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px',
+        }}
+      >
         <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>My AREAs</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => navigate('/areas/create')}
           style={{
             padding: '12px 24px',
-            backgroundColor: '#6366f1',
+            backgroundColor: '#474973',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -198,16 +206,25 @@ export default function AreasPage() {
             fontWeight: '600',
           }}
         >
-          {showForm ? 'Cancel' : '+ New AREA'}
+          + Créer une AREA
         </button>
       </div>
 
       {showForm && (
-        <div style={{ backgroundColor: '#f9fafb', padding: '30px', borderRadius: '12px', marginBottom: '30px' }}>
+        <div
+          style={{
+            backgroundColor: '#f9fafb',
+            padding: '30px',
+            borderRadius: '12px',
+            marginBottom: '30px',
+          }}
+        >
           <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>Create New AREA</h2>
           <form onSubmit={createArea}>
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Name *</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Name *
+              </label>
               <input
                 type="text"
                 value={formData.name}
@@ -225,7 +242,9 @@ export default function AreasPage() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Description</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Description
+              </label>
               <input
                 type="text"
                 value={formData.description}
@@ -241,11 +260,22 @@ export default function AreasPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                marginBottom: '20px',
+              }}
+            >
               <div>
-                <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#6366f1' }}>IF (Action)</h3>
+                <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#6366f1' }}>
+                  IF (Action)
+                </h3>
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Service</label>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                    Service
+                  </label>
                   <select
                     value={formData.actionService}
                     onChange={(e) => setFormData({ ...formData, actionService: e.target.value })}
@@ -263,7 +293,9 @@ export default function AreasPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Action Type</label>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                    Action Type
+                  </label>
                   <select
                     value={formData.actionType}
                     onChange={(e) => setFormData({ ...formData, actionType: e.target.value })}
@@ -299,9 +331,13 @@ export default function AreasPage() {
               </div>
 
               <div>
-                <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#10b981' }}>THEN (Reaction)</h3>
+                <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#10b981' }}>
+                  THEN (Reaction)
+                </h3>
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Service</label>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                    Service
+                  </label>
                   <select
                     value={formData.reactionService}
                     onChange={(e) => setFormData({ ...formData, reactionService: e.target.value })}
@@ -318,7 +354,9 @@ export default function AreasPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Reaction Type</label>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                    Reaction Type
+                  </label>
                   <select
                     value={formData.reactionType}
                     onChange={(e) => setFormData({ ...formData, reactionType: e.target.value })}
@@ -428,7 +466,14 @@ export default function AreasPage() {
               </div>
             )}
 
-            <div style={{ marginBottom: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '8px' }}>
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '20px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+              }}
+            >
               <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Reaction Configuration</h3>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
@@ -450,7 +495,9 @@ export default function AreasPage() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>Message</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                  Message
+                </label>
                 <input
                   type="text"
                   value={formData.message}
@@ -508,7 +555,14 @@ export default function AreasPage() {
               }}
             >
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px',
+                  }}
+                >
                   <h3 style={{ fontSize: '20px', fontWeight: '600' }}>{area.name}</h3>
                   <span
                     style={{
@@ -528,12 +582,12 @@ export default function AreasPage() {
                 )}
                 <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#4b5563' }}>
                   <div>
-                    <span style={{ fontWeight: '600', color: '#6366f1' }}>IF:</span> {area.actionService} -{' '}
-                    {area.actionType}
+                    <span style={{ fontWeight: '600', color: '#6366f1' }}>IF:</span>{' '}
+                    {area.actionService} - {area.actionType}
                   </div>
                   <div>
-                    <span style={{ fontWeight: '600', color: '#10b981' }}>THEN:</span> {area.reactionService} -{' '}
-                    {area.reactionType}
+                    <span style={{ fontWeight: '600', color: '#10b981' }}>THEN:</span>{' '}
+                    {area.reactionService} - {area.reactionType}
                   </div>
                 </div>
               </div>

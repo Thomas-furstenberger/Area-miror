@@ -75,10 +75,12 @@ fastify.get('/about.json', async (request, _reply) => {
         actions: service.actions.map((action) => ({
           name: action.name,
           description: action.description,
+          configFields: action.configFields || [],
         })),
         reactions: service.reactions.map((reaction) => ({
           name: reaction.name,
           description: reaction.description,
+          configFields: reaction.configFields || [],
         })),
       })),
     },
@@ -88,13 +90,23 @@ fastify.get('/about.json', async (request, _reply) => {
 // Register endpoint
 fastify.post('/api/auth/register', async (request, _reply) => {
   try {
-    const { email, password, name } = request.body as { email: string; password: string; name?: string };
+    const { email, password, name } = request.body as {
+      email: string;
+      password: string;
+      name?: string;
+    };
 
     if (!email || !password) {
       return _reply.status(400).send({ error: 'Email and password are required' });
     }
 
     const user = await userService.registerUser(email, password, name);
+
+    // Auto-login: create session
+    const sessionToken = generateSessionToken();
+    await userService.createSession(user.id, sessionToken);
+
+    const accessToken = generateAccessToken(user.id, user.email);
 
     return _reply.status(201).send({
       success: true,
@@ -103,7 +115,9 @@ fastify.post('/api/auth/register', async (request, _reply) => {
         email: user.email,
         name: user.name,
       },
-      message: 'User registered successfully. Please login to continue.',
+      accessToken,
+      sessionToken,
+      message: 'User registered successfully',
     });
   } catch (error) {
     fastify.log.error(error);
@@ -197,11 +211,17 @@ fastify.post('/api/auth/logout', async (request, _reply) => {
 
 // GitHub OAuth login initiation
 fastify.get('/api/auth/github', async (request, _reply) => {
+  const query = request.query as { token?: string };
   const clientId = process.env.GITHUB_CLIENT_ID;
   const redirectUri = process.env.GITHUB_CALLBACK_URL;
   const scope = 'user:email,read:user';
 
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+  let authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+
+  // If token provided, pass it as state to identify the user later
+  if (query.token) {
+    authUrl += `&state=${encodeURIComponent(query.token)}`;
+  }
 
   return _reply.redirect(authUrl);
 });
@@ -209,9 +229,10 @@ fastify.get('/api/auth/github', async (request, _reply) => {
 // GitHub OAuth callback
 fastify.get('/api/auth/github/callback', async (request, _reply) => {
   try {
-    const query = request.query as { code?: string; error?: string };
+    const query = request.query as { code?: string; error?: string; state?: string };
     const code = query.code;
     const error = query.error;
+    const state = query.state; // Will contain user token if connecting service
 
     if (error) {
       return _reply.status(401).send({ error: `GitHub error: ${error}` });
@@ -226,7 +247,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify({
         client_id: process.env.GITHUB_CLIENT_ID,
@@ -240,7 +261,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to exchange code for token' });
     }
 
-    const tokenData = await tokenResponse.json() as { access_token: string; error?: string };
+    const tokenData = (await tokenResponse.json()) as { access_token: string; error?: string };
 
     if (tokenData.error) {
       return _reply.status(401).send({ error: `Token error: ${tokenData.error}` });
@@ -251,8 +272,8 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     // Fetch user info from GitHub
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github.v3+json',
       },
     });
 
@@ -260,10 +281,47 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to fetch user info' });
     }
 
-    const githubUser = await userResponse.json() as { id: number; email: string; login: string; name: string; avatar_url: string };
+    const githubUser = (await userResponse.json()) as {
+      id: number;
+      email: string;
+      login: string;
+      name: string;
+      avatar_url: string;
+    };
 
-    // Find or create user with OAuth account
-    const user = await userService.findOrCreateOAuthUser('github', githubUser.id.toString(), {
+    // Check if user is already logged in (connecting a service)
+    if (state) {
+      try {
+        const session = await userService.getSessionByToken(state);
+        if (session) {
+          // Connect OAuth to existing user
+          await userService.connectOAuthToUser(
+            session.user.id,
+            'GITHUB',
+            githubUser.id.toString(),
+            {
+              email: githubUser.email || `github_${githubUser.login}@area.local`,
+              name: githubUser.name || githubUser.login,
+              avatarUrl: githubUser.avatar_url,
+              accessToken: accessToken,
+            }
+          );
+
+          return _reply.redirect(
+            `http://localhost:5173/services?token=${encodeURIComponent(state)}&service=github&connected=true`
+          );
+        }
+      } catch (err) {
+        console.error('Error connecting OAuth to user:', err);
+        const errorMsg = err instanceof Error ? err.message : 'Failed to connect service';
+        return _reply.redirect(
+          `http://localhost:5173/services?token=${encodeURIComponent(state)}&error=${encodeURIComponent(errorMsg)}`
+        );
+      }
+    }
+
+    // Login/Register flow: Find or create user with OAuth account
+    const user = await userService.findOrCreateOAuthUser('GITHUB', githubUser.id.toString(), {
       email: githubUser.email || `github_${githubUser.login}@area.local`,
       name: githubUser.name || githubUser.login,
       avatarUrl: githubUser.avatar_url,
@@ -278,7 +336,9 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
-    return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
+    return _reply
+      .status(500)
+      .send({ error: 'Authentication failed', details: (error as Error).message });
   }
 });
 
@@ -360,17 +420,60 @@ fastify.post('/api/user/oauth/disconnect/:provider', async (request, _reply) => 
   }
 });
 
+// DELETE endpoint for disconnecting OAuth account (RESTful)
+fastify.delete('/api/user/oauth/:provider', async (request, _reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return _reply.status(401).send({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+
+    if (!session) {
+      return _reply.status(401).send({ error: 'Invalid token' });
+    }
+
+    const { provider } = request.params as { provider: string };
+
+    // Delete OAuth account
+    await prisma.oAuthAccount.deleteMany({
+      where: {
+        userId: session.user.id,
+        provider: provider.toUpperCase(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `${provider} account disconnected`,
+    };
+  } catch (error) {
+    fastify.log.error(error);
+    return _reply.status(500).send({ error: 'Failed to disconnect OAuth account' });
+  }
+});
+
 // Discord OAuth login initiation
 fastify.get('/api/auth/discord', async (request, _reply) => {
+  const query = request.query as { token?: string };
   const clientId = process.env.DISCORD_CLIENT_ID;
   const redirectUri = process.env.DISCORD_CALLBACK_URL;
   const scope = 'identify email';
 
   if (!clientId || !redirectUri) {
-    return _reply.status(500).send({ error: 'Configuration Discord manquante (CLIENT_ID ou CALLBACK_URL)' });
+    return _reply
+      .status(500)
+      .send({ error: 'Configuration Discord manquante (CLIENT_ID ou CALLBACK_URL)' });
   }
 
-  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+  let authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+
+  // If token provided, pass it as state to identify the user later
+  if (query.token) {
+    authUrl += `&state=${encodeURIComponent(query.token)}`;
+  }
 
   return _reply.redirect(authUrl);
 });
@@ -378,9 +481,10 @@ fastify.get('/api/auth/discord', async (request, _reply) => {
 // Discord OAuth callback
 fastify.get('/api/auth/discord/callback', async (request, _reply) => {
   try {
-    const query = request.query as { code?: string; error?: string };
+    const query = request.query as { code?: string; error?: string; state?: string };
     const code = query.code;
     const error = query.error;
+    const state = query.state; // Will contain user token if connecting service
 
     if (error) {
       return _reply.status(401).send({ error: `Discord error: ${error}` });
@@ -409,13 +513,13 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to exchange code for token' });
     }
 
-    const tokenData = await tokenResponse.json() as { access_token: string };
+    const tokenData = (await tokenResponse.json()) as { access_token: string };
     const accessToken = tokenData.access_token;
 
     // Fetch user info from Discord
     const userResponse = await fetch('https://discord.com/api/users/@me', {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -423,13 +527,48 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to fetch user info' });
     }
 
-    const discordUser = await userResponse.json() as { id: string; email: string; username: string; avatar: string | null };
+    const discordUser = (await userResponse.json()) as {
+      id: string;
+      email: string;
+      username: string;
+      avatar: string | null;
+    };
 
-    // Find or create user with OAuth account
-    const user = await userService.findOrCreateOAuthUser('discord', discordUser.id, {
+    // Check if user is already logged in (connecting a service)
+    if (state) {
+      try {
+        const session = await userService.getSessionByToken(state);
+        if (session) {
+          // Connect OAuth to existing user
+          await userService.connectOAuthToUser(session.user.id, 'DISCORD', discordUser.id, {
+            email: discordUser.email || `discord_${discordUser.username}@area.local`,
+            name: discordUser.username,
+            avatarUrl: discordUser.avatar
+              ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+              : null,
+            accessToken: accessToken,
+          });
+
+          return _reply.redirect(
+            `http://localhost:5173/services?token=${encodeURIComponent(state)}&service=discord&connected=true`
+          );
+        }
+      } catch (err) {
+        console.error('Error connecting OAuth to user:', err);
+        const errorMsg = err instanceof Error ? err.message : 'Failed to connect service';
+        return _reply.redirect(
+          `http://localhost:5173/services?token=${encodeURIComponent(state)}&error=${encodeURIComponent(errorMsg)}`
+        );
+      }
+    }
+
+    // Login/Register flow: Find or create user with OAuth account
+    const user = await userService.findOrCreateOAuthUser('DISCORD', discordUser.id, {
       email: discordUser.email || `discord_${discordUser.username}@area.local`,
       name: discordUser.username,
-      avatarUrl: discordUser.avatar ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png` : null,
+      avatarUrl: discordUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        : null,
       accessToken: accessToken,
     });
 
@@ -441,13 +580,18 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
     return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
-    return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
+    return _reply
+      .status(500)
+      .send({ error: 'Authentication failed', details: (error as Error).message });
   }
 });
 
 const start = async () => {
   try {
-    await fastify.listen({ port: parseInt(process.env.PORT || '3000'), host: process.env.HOST || '0.0.0.0' });
+    await fastify.listen({
+      port: parseInt(process.env.PORT || '3000'),
+      host: process.env.HOST || '0.0.0.0',
+    });
     console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
 
     // Start the hook executor
@@ -461,21 +605,29 @@ const start = async () => {
 
 // login with gmail google
 fastify.get('/api/auth/gmail', async (request, _reply) => {
+  const query = request.query as { token?: string };
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_CALLBACK_URL;
 
   const scopes = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/gmail.modify'
+    'https://www.googleapis.com/auth/gmail.readonly',
   ];
   const scope = encodeURIComponent(scopes.join(' '));
 
   if (!clientId || !redirectUri) {
-    return _reply.status(500).send({ error: 'Configuration Google manquante (CLIENT_ID ou CALLBACK_URL)' });
+    return _reply
+      .status(500)
+      .send({ error: 'Configuration Google manquante (CLIENT_ID ou CALLBACK_URL)' });
   }
 
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+  let authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+  // If token provided, pass it as state to identify the user later
+  if (query.token) {
+    authUrl += `&state=${encodeURIComponent(query.token)}`;
+  }
 
   console.log('[Gmail OAuth] Authorization URL:', authUrl);
   return _reply.redirect(authUrl);
@@ -487,12 +639,13 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     const query = request.query as { code?: string; error?: string; state?: string };
     const code = query.code;
     const error = query.error;
+    const state = query.state; // Will contain user token if connecting service
 
     if (error) {
       return _reply.status(401).send({ error: `Erreur Google: ${error}` });
     }
     if (!code) {
-      return _reply.status(400).send({ error: 'Code d\'autorisation manquant' });
+      return _reply.status(400).send({ error: "Code d'autorisation manquant" });
     }
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -512,7 +665,10 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
     }
 
-    const tokenData = await tokenResponse.json() as { access_token: string; refresh_token?: string };
+    const tokenData = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+    };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
@@ -524,8 +680,46 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
     }
 
-    const googleUser = await userResponse.json() as { sub: string; email: string; name?: string; given_name?: string; picture?: string };
+    const googleUser = (await userResponse.json()) as {
+      sub: string;
+      email: string;
+      name?: string;
+      given_name?: string;
+      picture?: string;
+    };
 
+    // Check if user is already logged in (connecting a service)
+    if (state) {
+      try {
+        const session = await userService.getSessionByToken(state);
+        if (session) {
+          // Connect OAuth to existing user
+          const expiresAt = tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : undefined;
+          await userService.connectOAuthToUser(session.user.id, 'GOOGLE', googleUser.sub, {
+            email: googleUser.email,
+            name: googleUser.name || googleUser.given_name,
+            avatarUrl: googleUser.picture,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            expiresAt: expiresAt,
+          });
+
+          return _reply.redirect(
+            `http://localhost:5173/services?token=${encodeURIComponent(state)}&service=gmail&connected=true`
+          );
+        }
+      } catch (err) {
+        console.error('Error connecting OAuth to user:', err);
+        const errorMsg = err instanceof Error ? err.message : 'Failed to connect service';
+        return _reply.redirect(
+          `http://localhost:5173/services?token=${encodeURIComponent(state)}&error=${encodeURIComponent(errorMsg)}`
+        );
+      }
+    }
+
+    // Login/Register flow: Find or create user with OAuth account
     const user = await userService.findOrCreateOAuthUser('GOOGLE', googleUser.sub, {
       email: googleUser.email,
       name: googleUser.name || googleUser.given_name,
@@ -629,10 +823,11 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     return _reply.redirect(`${frontendUrl}/login/success?token=${sessionToken}`);
-
   } catch (error) {
     fastify.log.error(error);
-    return _reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
+    return _reply
+      .status(500)
+      .send({ error: 'Authentification Google échouée', details: (error as Error).message });
   }
 });
 
@@ -647,7 +842,16 @@ fastify.post('/api/areas', async (request, reply) => {
     const session = await userService.getSessionByToken(token);
     if (!session) return reply.status(401).send({ error: 'Invalid session' });
 
-    const { name, description, actionService, actionType, actionConfig, reactionService, reactionType, reactionConfig } = request.body as CreateAreaRequest;
+    const {
+      name,
+      description,
+      actionService,
+      actionType,
+      actionConfig,
+      reactionService,
+      reactionType,
+      reactionConfig,
+    } = request.body as CreateAreaRequest;
 
     if (!name || !actionService || !actionType || !reactionService || !reactionType) {
       return reply.status(400).send({ error: 'Missing required fields' });
@@ -745,26 +949,29 @@ fastify.post('/api/area/gmail/send_email', async (request, _reply) => {
     const { to, subject, body } = request.body as { to: string; subject: string; body: string };
 
     if (!to || !subject || !body) {
-      return _reply.status(400).send({ 
-        error: 'Paramètres manquants', 
-        required: ['to', 'subject', 'body'] 
+      return _reply.status(400).send({
+        error: 'Paramètres manquants',
+        required: ['to', 'subject', 'body'],
       });
     }
 
     const result = await gmailService.sendEmail(session.user.id, to, subject, body);
 
-    return { 
-      success: true, 
-      message: 'Email envoyé avec succès', 
-      googleId: (result as { id: string }).id
+    return {
+      success: true,
+      message: 'Email envoyé avec succès',
+      googleId: (result as { id: string }).id,
     };
-
   } catch (error) {
     fastify.log.error(error);
     if ((error as Error).message.includes('RefreshToken')) {
-        return _reply.status(403).send({ error: 'L\'utilisateur n\'a pas connecté son compte Google.' });
+      return _reply
+        .status(403)
+        .send({ error: "L'utilisateur n'a pas connecté son compte Google." });
     }
-    return _reply.status(500).send({ error: 'Échec de l\'envoi', details: (error as Error).message });
+    return _reply
+      .status(500)
+      .send({ error: "Échec de l'envoi", details: (error as Error).message });
   }
 });
 
@@ -772,8 +979,9 @@ fastify.post('/api/area/gmail/send_email', async (request, _reply) => {
 fastify.get('/api/auth/google-drive', async (request, _reply) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.DRIVE_CALLBACK_URL;
-  
-  const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive';
+
+  const scope =
+    'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive';
 
   if (!clientId || !redirectUri) {
     return _reply.status(500).send({ error: 'Configuration Google manquante' });
@@ -795,7 +1003,7 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: `Erreur Google: ${error}` });
     }
     if (!code) {
-      return _reply.status(400).send({ error: 'Code d\'autorisation manquant' });
+      return _reply.status(400).send({ error: "Code d'autorisation manquant" });
     }
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -815,7 +1023,11 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
     }
 
-    const tokenData = await tokenResponse.json() as { access_token: string; refresh_token?: string };
+    const tokenData = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+    };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
@@ -827,7 +1039,13 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
     }
 
-    const googleUser = await userResponse.json() as { sub: string; email: string; name?: string; given_name?: string; picture?: string };
+    const googleUser = (await userResponse.json()) as {
+      sub: string;
+      email: string;
+      name?: string;
+      given_name?: string;
+      picture?: string;
+    };
 
     const user = await userService.findOrCreateOAuthUser('GOOGLE_DRIVE', googleUser.sub, {
       email: googleUser.email,
@@ -841,10 +1059,11 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
     await userService.createSession(user.id, sessionToken);
 
     return _reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
-
   } catch (error) {
     fastify.log.error(error);
-    return _reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
+    return _reply
+      .status(500)
+      .send({ error: 'Authentification Google échouée', details: (error as Error).message });
   }
 });
 

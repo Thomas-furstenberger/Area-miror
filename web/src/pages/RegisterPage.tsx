@@ -18,7 +18,13 @@ export default function RegisterPage() {
     setIsLoading(false);
 
     if (result.success) {
-      navigate('/login', { state: { message: 'Compte créé ! Connecte-toi.' } });
+      // Store token if provided
+      if (result.accessToken || result.sessionToken) {
+        localStorage.setItem('token', result.sessionToken || result.accessToken);
+        navigate('/services');
+      } else {
+        navigate('/login', { state: { message: 'Compte créé ! Connecte-toi.' } });
+      }
     } else {
       setError(result.error);
     }

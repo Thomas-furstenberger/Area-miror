@@ -5,20 +5,28 @@ export class GmailService {
 
   async getValidToken(userId: number): Promise<string> {
     const oauthAccount = await this.prisma.oAuthAccount.findFirst({
-      where: { 
-        userId, 
-        provider: { in: ['GOOGLE', 'GOOGLE_DRIVE'] }
+      where: {
+        userId,
+        provider: { in: ['GOOGLE', 'GOOGLE_DRIVE'] },
       },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { updatedAt: 'desc' },
     });
 
-    if (!oauthAccount || !oauthAccount.refreshToken) {
-      throw new Error("Compte Google non connecté ou Refresh Token manquant.");
+    if (!oauthAccount) {
+      console.error(`[Gmail Service] Aucun compte Google trouvé pour l'utilisateur ${userId}`);
+      throw new Error('Compte Google non connecté ou Refresh Token manquant.');
+    }
+
+    if (!oauthAccount.refreshToken) {
+      console.error(
+        `[Gmail Service] Refresh Token manquant pour l'utilisateur ${userId}. L'utilisateur doit se reconnecter à Gmail.`
+      );
+      throw new Error('Compte Google non connecté ou Refresh Token manquant.');
     }
 
     const now = new Date();
-    const expiryDate = oauthAccount.expiresAt || new Date(0); 
-    
+    const expiryDate = oauthAccount.expiresAt || new Date(0);
+
     if (now >= expiryDate) {
       console.log('Token Google expiré, rafraîchissement...');
       return this.refreshAccessToken(oauthAccount.id, oauthAccount.refreshToken);
@@ -26,7 +34,6 @@ export class GmailService {
 
     return oauthAccount.accessToken!;
   }
-
 
   private async refreshAccessToken(accountId: string, refreshToken: string): Promise<string> {
     const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -41,10 +48,19 @@ export class GmailService {
     });
 
     if (!response.ok) {
-      throw new Error(`Impossible de rafraîchir le token: ${await response.text()}`);
+      const errorText = await response.text();
+      console.error(
+        `[Gmail Service] Échec du rafraîchissement du token (${response.status}):`,
+        errorText
+      );
+      throw new Error(`Impossible de rafraîchir le token: ${errorText}`);
     }
 
+<<<<<<< HEAD:server/src/reactions/gmail.reaction.ts
     const data = await response.json() as { access_token: string; refresh_token?: string; expires_in: number };
+=======
+    const data = await response.json();
+>>>>>>> 4c22f6b (feat(frontend): we can now connect and create new working areas):server/src/gmail.service.ts
 
     const newExpiresAt = new Date(Date.now() + data.expires_in * 1000);
 
@@ -60,7 +76,6 @@ export class GmailService {
     return data.access_token;
   }
 
-
   async sendEmail(userId: number, to: string, subject: string, body: string) {
     const token = await this.getValidToken(userId);
 
@@ -71,10 +86,10 @@ export class GmailService {
       'MIME-Version: 1.0',
       `Subject: ${utf8Subject}`,
       '',
-      body
+      body,
     ];
     const message = messageParts.join('\n');
-    
+
     const encodedMessage = Buffer.from(message)
       .toString('base64')
       .replace(/\+/g, '-')
@@ -84,7 +99,7 @@ export class GmailService {
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

@@ -9,7 +9,7 @@ export default function LoginSuccessPage() {
     const token = searchParams.get('token');
 
     if (token) {
-      localStorage.setItem('user_token', token);
+      localStorage.setItem('token', token);
       console.log('Token saved:', token);
 
       setTimeout(() => {
@@ -24,7 +24,15 @@ export default function LoginSuccessPage() {
   }, [searchParams, navigate]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px',
+      }}
+    >
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '12px' }}>

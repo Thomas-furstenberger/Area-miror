@@ -1,7 +1,7 @@
 const BASE_URL = '/api/auth';
 
 const getAuthHeader = (): Record<string, string> => {
-  const token = localStorage.getItem('sessionToken');
+  const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -57,8 +57,7 @@ export const me = async () => {
 };
 
 export const logout = () => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('sessionToken');
+  localStorage.removeItem('token');
   window.location.href = '/login';
 };
 

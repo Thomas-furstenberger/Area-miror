@@ -1,68 +1,63 @@
 import { PrismaClient } from '@prisma/client';
+import { GmailService } from '../gmail.service';
 
 export class GmailAction {
-  constructor(private prisma: PrismaClient) {}
+  private gmailService: GmailService;
+
+  constructor(private prisma: PrismaClient) {
+    this.gmailService = new GmailService(prisma);
+  }
 
   async checkEmailReceived(userId: number, _config: unknown): Promise<boolean> {
-    const oauthAccount = await this.prisma.oAuthAccount.findFirst({
-      where: {
-        userId,
-        provider: 'GOOGLE',
-      },
-    });
-
-    if (!oauthAccount || !oauthAccount.accessToken) {
-      console.log(`[Gmail Action] No Gmail account connected for user ${userId}`);
-      return false;
-    }
-
     try {
+      const accessToken = await this.gmailService.getValidToken(userId);
+
       const response = await fetch(
         'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5&q=is:unread',
         {
           headers: {
-            Authorization: `Bearer ${oauthAccount.accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
 
       if (!response.ok) {
-        console.error(`[Gmail Action] Failed to fetch messages: ${response.status}`);
+        const errorBody = await response.text();
+        console.error(
+          `[Gmail Action] Failed to fetch messages for user ${userId}: ${response.status} - ${errorBody}`
+        );
         return false;
       }
 
       const data = await response.json() as { messages?: Array<{ id: string }> };
 
       if (data.messages && data.messages.length > 0) {
-        console.log(`[Gmail Action] Found ${data.messages.length} unread emails for user ${userId}`);
+        console.log(
+          `[Gmail Action] Found ${data.messages.length} unread emails for user ${userId}`
+        );
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('[Gmail Action] Error checking emails:', error);
+      if (error instanceof Error && error.message.includes('Compte Google non connecté')) {
+        console.warn(`[Gmail Action] User ${userId}: ${error.message}`);
+      } else {
+        console.error(`[Gmail Action] Error checking emails for user ${userId}:`, error);
+      }
       return false;
     }
   }
 
   async getLatestEmailSubject(userId: number): Promise<string> {
-    const oauthAccount = await this.prisma.oAuthAccount.findFirst({
-      where: {
-        userId,
-        provider: 'GOOGLE',
-      },
-    });
-
-    if (!oauthAccount || !oauthAccount.accessToken) {
-      return 'Unknown email';
-    }
-
     try {
+      const accessToken = await this.gmailService.getValidToken(userId);
+
       const listResponse = await fetch(
         'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1',
         {
           headers: {
-            Authorization: `Bearer ${oauthAccount.accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
@@ -79,13 +74,15 @@ export class GmailAction {
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=metadata&metadataHeaders=Subject`,
         {
           headers: {
-            Authorization: `Bearer ${oauthAccount.accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
 
-      const messageData = await messageResponse.json() as { payload?: { headers?: Array<{ name: string; value: string }> } };
-      const subjectHeader = messageData.payload?.headers?.find((h: { name: string; value: string }) => h.name === 'Subject');
+      const messageData = await messageResponse.json();
+      const subjectHeader = messageData.payload?.headers?.find(
+        (h: { name: string; value: string }) => h.name === 'Subject'
+      );
 
       return subjectHeader?.value || 'No subject';
     } catch (error) {

@@ -69,7 +69,11 @@ export class UserService {
     });
   }
 
-  async findOrCreateOAuthUser(provider: string, providerAccountId: string, userData: OAuthUserData) {
+  async findOrCreateOAuthUser(
+    provider: string,
+    providerAccountId: string,
+    userData: OAuthUserData
+  ) {
     const oauthAccount = await this.prisma.oAuthAccount.findUnique({
       where: {
         provider_providerAccountId: {
@@ -82,7 +86,7 @@ export class UserService {
 
     if (oauthAccount) {
       const dataToUpdate: { accessToken?: string; refreshToken?: string; expiresAt?: Date } = {};
-      
+
       if (userData.accessToken) dataToUpdate.accessToken = userData.accessToken;
       if (userData.refreshToken) dataToUpdate.refreshToken = userData.refreshToken;
       if (userData.expiresAt) dataToUpdate.expiresAt = userData.expiresAt;
@@ -161,6 +165,60 @@ export class UserService {
   async deleteSession(token: string) {
     return this.prisma.session.delete({
       where: { token },
+    });
+  }
+
+  // Connect OAuth service to existing user
+  async connectOAuthToUser(
+    userId: number,
+    provider: string,
+    providerAccountId: string,
+    userData: OAuthUserData
+  ) {
+    // Check if this OAuth account is already connected to another user
+    const existingOAuth = await this.prisma.oAuthAccount.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+    });
+
+    if (existingOAuth && existingOAuth.userId !== userId) {
+      throw new Error('This OAuth account is already connected to another user');
+    }
+
+    // Check if user already has this provider connected
+    const userOAuth = await this.prisma.oAuthAccount.findFirst({
+      where: {
+        userId,
+        provider,
+      },
+    });
+
+    if (userOAuth) {
+      // Update existing OAuth account
+      return this.prisma.oAuthAccount.update({
+        where: { id: userOAuth.id },
+        data: {
+          accessToken: userData.accessToken,
+          refreshToken: userData.refreshToken,
+          expiresAt: userData.expiresAt,
+        },
+      });
+    }
+
+    // Create new OAuth account
+    return this.prisma.oAuthAccount.create({
+      data: {
+        provider,
+        providerAccountId,
+        accessToken: userData.accessToken,
+        refreshToken: userData.refreshToken,
+        expiresAt: userData.expiresAt,
+        userId,
+      },
     });
   }
 }

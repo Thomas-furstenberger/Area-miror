@@ -18,14 +18,13 @@ export default function Navbar() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       if (token) {
         const result = await me();
         if (result.success) {
           setUser(result.data);
         } else {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('sessionToken');
+          localStorage.removeItem('token');
         }
       }
       setLoading(false);
