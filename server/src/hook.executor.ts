@@ -87,8 +87,8 @@ export class HookExecutor {
       triggered = await this.gmailAction.checkEmailReceived(area.userId, area.actionConfig);
     } else if (area.actionService === 'github' && area.actionType === 'pull_request_opened') {
       triggered = await this.githubAction.checkPullRequestOpened(
-        area.userId, 
-        area.actionConfig, 
+        area.userId,
+        area.actionConfig as any,
         area.lastTriggered
       );
     } else if (area.actionService === 'timer') {

@@ -45,7 +45,7 @@ export class GithubAction {
         return false;
       }
 
-      const pulls = await response.json();
+      const pulls = await response.json() as Array<{ created_at: string; title: string }>;
       if (!pulls || pulls.length === 0) {
         return false;
       }
