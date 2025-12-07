@@ -1,18 +1,31 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { UserService } from './user.service';
 import { generateAccessToken, generateSessionToken } from './auth';
 import { SERVICES } from './services.config';
 import { GmailService } from './gmail.service';
+import { AreaService } from './area.service';
+import { HookExecutor } from './hook.executor';
 
 const fastify = Fastify({
   logger: true,
 });
 
+// Register CORS to allow frontend requests
+fastify.register(cors, {
+  origin: ['http://localhost:5173', 'http://localhost:8081'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
+
 const prisma = new PrismaClient();
 const userService = new UserService(prisma);
 const gmailService = new GmailService(prisma);
+const areaService = new AreaService(prisma);
+const hookExecutor = new HookExecutor(prisma);
 
 fastify.get('/', async (_request, _reply) => {
   return { message: 'Welcome to Area Server API' };
@@ -22,7 +35,6 @@ fastify.get('/health', async (_request, _reply) => {
   return { status: 'ok' };
 });
 
-// About endpoint - Required by docker-compose specification
 fastify.get('/about.json', async (request, _reply) => {
   const clientIp = request.ip || request.headers['x-forwarded-for'] || 'unknown';
   const currentTime = Math.floor(Date.now() / 1000);
@@ -203,7 +215,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to exchange code for token' });
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string; error?: string };
 
     if (tokenData.error) {
       return _reply.status(401).send({ error: `Token error: ${tokenData.error}` });
@@ -223,7 +235,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to fetch user info' });
     }
 
-    const githubUser = await userResponse.json();
+    const githubUser = await userResponse.json() as { id: number; email: string; login: string; name: string; avatar_url: string };
 
     // Find or create user with OAuth account
     const user = await userService.findOrCreateOAuthUser('github', githubUser.id.toString(), {
@@ -238,17 +250,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     await userService.createSession(user.id, sessionToken);
     const jwtToken = generateAccessToken(user.id, user.email);
 
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-      },
-      accessToken: jwtToken,
-      sessionToken,
-    };
+    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
@@ -307,8 +309,11 @@ fastify.post('/api/user/oauth/disconnect/:provider', async (request, _reply) => 
     const { provider } = request.params as { provider: string };
 
     // Check user has at least one password-based auth
-    const user = await userService.getUserById(session.user.id);
-    if (!user?.password && provider === 'github') {
+    const oauthAccounts = await prisma.oAuthAccount.findMany({
+      where: { userId: session.user.id },
+    });
+
+    if (oauthAccounts.length === 1 && provider === 'github') {
       return _reply.status(400).send({ error: 'Cannot disconnect only auth method' });
     }
 
@@ -335,6 +340,10 @@ fastify.get('/api/auth/discord', async (request, _reply) => {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const redirectUri = process.env.DISCORD_CALLBACK_URL;
   const scope = 'identify email';
+
+  if (!clientId || !redirectUri) {
+    return _reply.status(500).send({ error: 'Configuration Discord manquante (CLIENT_ID ou CALLBACK_URL)' });
+  }
 
   const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
 
@@ -375,7 +384,7 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to exchange code for token' });
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string };
     const accessToken = tokenData.access_token;
 
     // Fetch user info from Discord
@@ -389,7 +398,7 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Failed to fetch user info' });
     }
 
-    const discordUser = await userResponse.json();
+    const discordUser = await userResponse.json() as { id: string; email: string; username: string; avatar: string | null };
 
     // Find or create user with OAuth account
     const user = await userService.findOrCreateOAuthUser('discord', discordUser.id, {
@@ -404,17 +413,7 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
     await userService.createSession(user.id, sessionToken);
     const jwtToken = generateAccessToken(user.id, user.email);
 
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-      },
-      accessToken: jwtToken,
-      sessionToken,
-    };
+    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentication failed', details: (error as Error).message });
@@ -425,6 +424,10 @@ const start = async () => {
   try {
     await fastify.listen({ port: parseInt(process.env.PORT || '3000'), host: process.env.HOST || '0.0.0.0' });
     console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+
+    // Start the hook executor
+    hookExecutor.start(2); // Check every 2 minutes
+    console.log('Hook executor started');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
@@ -434,16 +437,22 @@ const start = async () => {
 // login with gmail google
 fastify.get('/api/auth/gmail', async (request, _reply) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GMAIL_CALLBACK_URL;
-  
-  const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.modify';
+  const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+
+  const scopes = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/gmail.modify'
+  ];
+  const scope = encodeURIComponent(scopes.join(' '));
 
   if (!clientId || !redirectUri) {
     return _reply.status(500).send({ error: 'Configuration Google manquante (CLIENT_ID ou CALLBACK_URL)' });
   }
 
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
 
+  console.log('[Gmail OAuth] Authorization URL:', authUrl);
   return _reply.redirect(authUrl);
 });
 
@@ -478,7 +487,7 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string; refresh_token?: string };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
@@ -490,7 +499,7 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
     }
 
-    const googleUser = await userResponse.json();
+    const googleUser = await userResponse.json() as { sub: string; email: string; name?: string; given_name?: string; picture?: string };
 
     const user = await userService.findOrCreateOAuthUser('GOOGLE', googleUser.sub, {
       email: googleUser.email,
@@ -504,11 +513,107 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     await userService.createSession(user.id, sessionToken);
     //const jwtToken = generateAccessToken(user.id, user.email);
 
-    return _reply.redirect(`http://localhost:8081/login/success?token=${sessionToken}`);
+    return _reply.redirect(`http://localhost:5173/login/success?token=${sessionToken}`);
 
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Authentification Google échouée', details: (error as Error).message });
+  }
+});
+
+// AREA endpoints
+// Create a new AREA
+fastify.post('/api/areas', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return reply.status(401).send({ error: 'Token required' });
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+    if (!session) return reply.status(401).send({ error: 'Invalid session' });
+
+    const { name, description, actionService, actionType, actionConfig, reactionService, reactionType, reactionConfig } = request.body as any;
+
+    if (!name || !actionService || !actionType || !reactionService || !reactionType) {
+      return reply.status(400).send({ error: 'Missing required fields' });
+    }
+
+    const area = await areaService.createArea(session.user.id, {
+      name,
+      description,
+      actionService,
+      actionType,
+      actionConfig,
+      reactionService,
+      reactionType,
+      reactionConfig,
+    });
+
+    return reply.status(201).send({ success: true, area });
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({ error: 'Failed to create area' });
+  }
+});
+
+// Get all user's AREAs
+fastify.get('/api/areas', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return reply.status(401).send({ error: 'Token required' });
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+    if (!session) return reply.status(401).send({ error: 'Invalid session' });
+
+    const areas = await areaService.getAreasByUserId(session.user.id);
+
+    return { success: true, areas };
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(500).send({ error: 'Failed to fetch areas' });
+  }
+});
+
+// Toggle AREA active status
+fastify.put('/api/areas/:id/toggle', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return reply.status(401).send({ error: 'Token required' });
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+    if (!session) return reply.status(401).send({ error: 'Invalid session' });
+
+    const { id } = request.params as any;
+
+    const area = await areaService.toggleArea(id, session.user.id);
+
+    return { success: true, area };
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(404).send({ error: 'Area not found' });
+  }
+});
+
+// Delete AREA
+fastify.delete('/api/areas/:id', async (request, reply) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return reply.status(401).send({ error: 'Token required' });
+
+    const token = authHeader.split(' ')[1];
+    const session = await userService.getSessionByToken(token);
+    if (!session) return reply.status(401).send({ error: 'Invalid session' });
+
+    const { id } = request.params as any;
+
+    await areaService.deleteArea(id, session.user.id);
+
+    return { success: true, message: 'Area deleted' };
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.status(404).send({ error: 'Area not found' });
   }
 });
 
@@ -536,7 +641,7 @@ fastify.post('/api/area/gmail/send_email', async (request, _reply) => {
     return { 
       success: true, 
       message: 'Email envoyé avec succès', 
-      googleId: result.id
+      googleId: (result as { id: string }).id
     };
 
   } catch (error) {
@@ -595,7 +700,7 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: `Échec de l'échange de token: ${errText}` });
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string; refresh_token?: string };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
@@ -607,7 +712,7 @@ fastify.get('/api/auth/drive/callback', async (request, _reply) => {
       return _reply.status(401).send({ error: 'Impossible de récupérer le profil utilisateur' });
     }
 
-    const googleUser = await userResponse.json();
+    const googleUser = await userResponse.json() as { sub: string; email: string; name?: string; given_name?: string; picture?: string };
 
     const user = await userService.findOrCreateOAuthUser('GOOGLE_DRIVE', googleUser.sub, {
       email: googleUser.email,

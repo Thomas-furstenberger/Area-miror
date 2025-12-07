@@ -41,6 +41,14 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="areas"
+        options={{
+          title: 'Mes AREAs',
+          tabBarIcon: ({ color }) => <Ionicons name="cube-outline" size={24} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
         name="explore"
         options={{
           title: 'Services',

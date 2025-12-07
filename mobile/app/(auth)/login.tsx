@@ -6,7 +6,7 @@
 */
 
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '@/constants/theme';
@@ -34,6 +34,24 @@ export default function LoginScreen() {
       router.replace('/(tabs)');
     } else {
       Alert.alert('Erreur', result.error || 'Identifiants incorrects');
+    }
+  };
+
+  const handleOAuthLogin = async (provider: 'gmail' | 'github' | 'discord') => {
+    try {
+      const ip = await AsyncStorage.getItem('server_ip');
+      const port = await AsyncStorage.getItem('server_port');
+      const url = `http://${ip}:${port}/api/auth/${provider}`;
+
+      // Open OAuth in browser
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Erreur', 'Impossible d\'ouvrir le navigateur');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Erreur lors de la connexion OAuth');
     }
   };
 
@@ -80,6 +98,39 @@ export default function LoginScreen() {
           >
             <Text style={styles.loginButtonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
             {!loading && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OU</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.oauthButton, { backgroundColor: '#4285f4' }]}
+            onPress={() => handleOAuthLogin('gmail')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-google" size={20} color="#FFF" />
+            <Text style={styles.oauthButtonText}>Continuer avec Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.oauthButton, { backgroundColor: '#24292e' }]}
+            onPress={() => handleOAuthLogin('github')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-github" size={20} color="#FFF" />
+            <Text style={styles.oauthButtonText}>Continuer avec GitHub</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.oauthButton, { backgroundColor: '#5865f2' }]}
+            onPress={() => handleOAuthLogin('discord')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-discord" size={20} color="#FFF" />
+            <Text style={styles.oauthButtonText}>Continuer avec Discord</Text>
           </TouchableOpacity>
 
           <Link href="/(auth)/register" asChild>
@@ -160,6 +211,36 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Inter_700Bold',
     fontSize: 16,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    color: COLORS.h2,
+    marginHorizontal: 16,
+  },
+  oauthButton: {
+    height: 52,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  oauthButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
   },
   registerButton: {
     alignItems: 'center',

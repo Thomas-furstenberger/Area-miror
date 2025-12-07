@@ -54,8 +54,8 @@ export const SERVICES: ServiceConfig[] = [
         description: 'When a specific date is reached',
       },
       {
-        name: 'day_before_event',
-        description: 'X days before a specific date',
+        name: 'day_of_week',
+        description: 'When a specific day of the week is reached',
       },
     ],
     reactions: [

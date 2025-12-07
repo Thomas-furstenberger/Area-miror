@@ -20,6 +20,7 @@ model User {
   githubLogin   String?        @unique
   oauthAccounts OAuthAccount[]
   sessions      Session[]
+  areas         Area[]
 
   @@map("users")
 }
@@ -49,4 +50,28 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+model Area {
+  id          String   @id @default(cuid())
+  userId      Int
+  name        String
+  description String?
+  active      Boolean  @default(true)
+
+  actionService   String
+  actionType      String
+  actionConfig    Json?
+
+  reactionService String
+  reactionType    String
+  reactionConfig  Json?
+
+  lastTriggered DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("areas")
 }
