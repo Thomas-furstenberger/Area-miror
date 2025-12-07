@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword, comparePassword } from './auth';
 
+export interface OAuthUserData {
+  email: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+}
+
 export class UserService {
   constructor(private prisma: PrismaClient) {}
 
@@ -60,9 +69,8 @@ export class UserService {
     });
   }
 
-  async findOrCreateOAuthUser(provider: string, providerAccountId: string, userData: any) {
-    // Check if OAuth account exists
-    let oauthAccount = await this.prisma.oAuthAccount.findUnique({
+  async findOrCreateOAuthUser(provider: string, providerAccountId: string, userData: OAuthUserData) {
+    const oauthAccount = await this.prisma.oAuthAccount.findUnique({
       where: {
         provider_providerAccountId: {
           provider,
@@ -73,20 +81,40 @@ export class UserService {
     });
 
     if (oauthAccount) {
-      // Update tokens if provided
-      if (userData.accessToken) {
+      const dataToUpdate: any = {};
+      
+      if (userData.accessToken) dataToUpdate.accessToken = userData.accessToken;
+      if (userData.refreshToken) dataToUpdate.refreshToken = userData.refreshToken;
+      if (userData.expiresAt) dataToUpdate.expiresAt = userData.expiresAt;
+
+      if (Object.keys(dataToUpdate).length > 0) {
         await this.prisma.oAuthAccount.update({
           where: { id: oauthAccount.id },
-          data: {
-            accessToken: userData.accessToken,
-            refreshToken: userData.refreshToken,
-          },
+          data: dataToUpdate,
         });
       }
       return oauthAccount.user;
     }
 
-    // Create new user with OAuth account
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      await this.prisma.oAuthAccount.create({
+        data: {
+          provider,
+          providerAccountId,
+          accessToken: userData.accessToken,
+          refreshToken: userData.refreshToken,
+          expiresAt: userData.expiresAt,
+          userId: existingUser.id,
+        },
+      });
+
+      return existingUser;
+    }
+
     const user = await this.prisma.user.create({
       data: {
         email: userData.email,
@@ -99,6 +127,7 @@ export class UserService {
             providerAccountId,
             accessToken: userData.accessToken,
             refreshToken: userData.refreshToken,
+            expiresAt: userData.expiresAt,
           },
         },
       },
