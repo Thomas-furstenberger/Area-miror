@@ -38,10 +38,6 @@ docker-compose up --build
 
 **Actions**
 - ✅ **Gmail**: `email_received` - Detects new unread emails
-- ✅ **Timer**:
-  - `time_reached` - Triggers at specific time daily
-  - `date_reached` - Triggers on specific date (once)
-  - `day_of_week` - Triggers on specific weekday
 
 **Reactions**
 - ✅ **Discord**: `send_message` - Sends message via webhook with custom emojis
@@ -233,7 +229,7 @@ eas build --platform android --profile production
 
 The application includes complete working examples:
 
-### Test 1: Gmail → Discord
+### Test: Gmail → Discord
 
 1. **Login** with OAuth Gmail
 2. **Create an AREA**:
@@ -242,20 +238,6 @@ The application includes complete working examples:
    - Configure Discord webhook URL
 3. **Test**: Send yourself an email
 4. **Result**: Within 2 minutes, you'll receive a Discord notification with email subject
-
-### Test 2: Timer → Discord
-
-1. **Login** with any OAuth provider
-2. **Create an AREA**:
-   - IF: Timer - time_reached
-   - Config: `{"hour": 14, "minute": 30}`
-   - THEN: Discord - send_message
-   - Configure Discord webhook URL
-3. **Wait**: Until configured time
-4. **Result**: Discord message "⏰ Time alert: 14:30"
-
-**Quick Test Guide**: See [TEST_TIMER.md](TEST_TIMER.md)
-**Timer Examples**: See [TIMER_EXAMPLES.md](TIMER_EXAMPLES.md)
 
 ## 🏗️ Architecture
 
