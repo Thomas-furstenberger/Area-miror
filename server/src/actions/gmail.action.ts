@@ -8,12 +8,16 @@ export class GmailAction {
     this.gmailService = new GmailService(prisma);
   }
 
-  async checkEmailReceived(userId: number, _config: unknown): Promise<boolean> {
+  async checkEmailReceived(
+    userId: number,
+    _config: unknown,
+    lastTriggered: Date | null
+  ): Promise<boolean> {
     try {
       const accessToken = await this.gmailService.getValidToken(userId);
 
       const response = await fetch(
-        'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5&q=is:unread',
+        'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1',
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -29,16 +33,36 @@ export class GmailAction {
         return false;
       }
 
-      const data = await response.json() as { messages?: Array<{ id: string }> };
+      const data = (await response.json()) as { messages?: Array<{ id: string }> };
 
-      if (data.messages && data.messages.length > 0) {
-        console.log(
-          `[Gmail Action] Found ${data.messages.length} unread emails for user ${userId}`
-        );
-        return true;
+      if (!data.messages || data.messages.length === 0) {
+        return false;
       }
 
-      return false;
+      const messageId = data.messages[0].id;
+      const detailResponse = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=minimal`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      const messageData = await detailResponse.json();
+      const emailDate = parseInt(messageData.internalDate);
+
+      if (!lastTriggered) {
+        console.log(
+          `[Gmail Action] Initialisation. Dernier mail du ${new Date(emailDate).toLocaleString()} ignoré.`
+        );
+        return false;
+      }
+
+      if (emailDate <= lastTriggered.getTime()) {
+        return false;
+      }
+
+      console.log(
+        `[Gmail Action] NOUVEAU mail détecté ! (Reçu le : ${new Date(emailDate).toLocaleString()})`
+      );
+      return true;
     } catch (error) {
       if (error instanceof Error && error.message.includes('Compte Google non connecté')) {
         console.warn(`[Gmail Action] User ${userId}: ${error.message}`);
@@ -62,7 +86,7 @@ export class GmailAction {
         }
       );
 
-      const listData = await listResponse.json() as { messages?: Array<{ id: string }> };
+      const listData = (await listResponse.json()) as { messages?: Array<{ id: string }> };
 
       if (!listData.messages || listData.messages.length === 0) {
         return 'No emails found';
@@ -79,7 +103,7 @@ export class GmailAction {
         }
       );
 
-      const messageData = await messageResponse.json() as {
+      const messageData = (await messageResponse.json()) as {
         payload?: {
           headers?: Array<{ name: string; value: string }>;
         };

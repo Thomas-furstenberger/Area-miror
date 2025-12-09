@@ -1,16 +1,21 @@
-/*
-** EPITECH PROJECT, 2025
-** Area-miror
-** File description:
-** explore
-*/
-
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, SafeAreaView, Platform, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useCallback, useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchAbout } from '@/services/api';
+import { fetchAbout, getConnectedAccounts, getAuthUrl } from '@/services/api';
 
 const getIconName = (serviceName: string) => {
   const name = serviceName.toLowerCase();
@@ -19,71 +24,142 @@ const getIconName = (serviceName: string) => {
   if (name.includes('discord')) return 'logo-discord';
   if (name.includes('spotify')) return 'musical-notes';
   if (name.includes('twitter') || name.includes('x')) return 'logo-twitter';
-  if (name.includes('weather')) return 'cloud';
-  if (name.includes('timer')) return 'time';
   return 'cube';
 };
 
 export default function ServicesScreen() {
   const router = useRouter();
   const [services, setServices] = useState<any[]>([]);
+  const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadServices = async () => {
-      setLoading(true);
-      const result = await fetchAbout();
-      if (result.success && result.data.server && result.data.server.services) {
-        setServices(result.data.server.services);
+    const handleDeepLink = async (event: { url: string }) => {
+      let data = Linking.parse(event.url);
+
+      if (data.queryParams?.token) {
+        const token = data.queryParams.token as string;
+        await AsyncStorage.setItem('user_token', token);
+        Alert.alert('Succès', 'Connexion réussie !');
+        loadData();
       }
-      setLoading(false);
     };
-    loadServices();
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleDeepLink({ url });
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const aboutRes = await fetchAbout();
+      if (aboutRes.success && aboutRes.data.server?.services) {
+        setServices(aboutRes.data.server.services);
+      }
+
+      const accountsRes = await getConnectedAccounts();
+      if (accountsRes.success && Array.isArray(accountsRes.data.accounts)) {
+        const providers = accountsRes.data.accounts.map((acc: any) => {
+          const providerName = acc.provider.toLowerCase();
+          if (providerName === 'google') return 'gmail';
+          return providerName;
+        });
+        setConnectedProviders(providers);
+      }
+    } catch (e) {
+      console.error('Erreur chargement', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const handleServiceClick = async (service: any) => {
+    const serviceName = service.name.toLowerCase();
+    const isConnected = connectedProviders.includes(serviceName);
+
+    if (isConnected) {
+      router.push({
+        pathname: '/create_area',
+        params: { serviceData: JSON.stringify(service) },
+      });
+    } else {
+      try {
+        const authUrl = await getAuthUrl(serviceName);
+        const supported = await Linking.canOpenURL(authUrl);
+        if (supported) {
+          await Linking.openURL(authUrl);
+        } else {
+          Alert.alert('Erreur', "Impossible d'ouvrir le navigateur");
+        }
+      } catch (err) {
+        Alert.alert('Erreur', 'Problème de connexion au serveur.');
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.titleText}>Explorer</Text>
-        <Text style={styles.subtitleText}>Connectez vos applications</Text>
+        <Text style={styles.subtitleText}>Gérez vos connexions</Text>
       </View>
 
       {loading ? (
-        <View style={{flex: 1, justifyContent: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.link} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-          {services.map((service, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => router.push({ 
-                pathname: "/create_area", 
-                params: { serviceData: JSON.stringify(service) } 
-              })}
-            >
-              <View style={styles.iconWrapper}>
-                <Ionicons name={getIconName(service.name) as any} size={32} color={COLORS.h1} />
-              </View>
-              
-              <Text style={styles.serviceName}>
-                {service.name.charAt(0).toUpperCase() + service.name.slice(1)}
-              </Text>
-              
-              <View style={[styles.statusBadge, { backgroundColor: '#E8F5E9' }]}>
-                <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-                <Text style={[styles.statusText, { color: '#2E7D32' }]}>Disponible</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-          
-          {services.length === 0 && (
-             <Text style={{textAlign: 'center', width: '100%', color: COLORS.text}}>
-               Aucun service trouvé sur le serveur.
-             </Text>
-          )}
+          {services.map((service, index) => {
+            const isConnected = connectedProviders.includes(service.name.toLowerCase());
+
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.card, isConnected ? styles.cardConnected : styles.cardDisconnected]}
+                activeOpacity={0.7}
+                onPress={() => handleServiceClick(service)}
+              >
+                <View style={styles.iconWrapper}>
+                  <Ionicons name={getIconName(service.name) as any} size={32} color={COLORS.h1} />
+                </View>
+
+                <Text style={styles.serviceName}>
+                  {service.name.charAt(0).toUpperCase() + service.name.slice(1)}
+                </Text>
+
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: isConnected ? '#E8F5E9' : '#FFF3E0' },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: isConnected ? '#4CAF50' : '#FF9800' },
+                    ]}
+                  />
+                  <Text style={[styles.statusText, { color: isConnected ? '#2E7D32' : '#EF6C00' }]}>
+                    {isConnected ? 'Connecté' : 'Se connecter'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -120,7 +196,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '48%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 20,
     marginBottom: 16,
@@ -130,8 +205,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 2,
+  },
+  cardConnected: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'transparent',
+  },
+  cardDisconnected: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderColor: COLORS.inputBorder,
+    borderStyle: 'dashed',
   },
   iconWrapper: {
     width: 56,
@@ -152,14 +235,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 12,
     gap: 6,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   statusText: {
     fontFamily: 'Inter_600SemiBold',

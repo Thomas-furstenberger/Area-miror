@@ -1,224 +1,413 @@
-/*
-** EPITECH PROJECT, 2025
-** Area-miror
-** File description:
-** create_area
-*/
-
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { createArea, fetchAbout } from '@/services/api';
 
-const ACTIONS = [
-  { id: 'act_1', name: 'Nouveau mail reçu', service: 'Gmail', icon: 'mail' },
-  { id: 'act_2', name: 'Nouveau commit', service: 'GitHub', icon: 'git-commit' },
-  { id: 'act_3', name: 'Météo change', service: 'Weather', icon: 'cloud' },
-];
+interface ConfigField {
+  name: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+}
+interface ServiceItem {
+  name: string;
+  description: string;
+  configFields?: ConfigField[];
+}
+interface Service {
+  name: string;
+  actions: ServiceItem[];
+  reactions: ServiceItem[];
+}
 
-const REACTIONS = [
-  { id: 'reac_1', name: 'Envoyer un message', service: 'Discord', icon: 'chatbubbles' },
-  { id: 'reac_2', name: 'Créer un fichier', service: 'Drive', icon: 'document' },
-  { id: 'reac_3', name: 'Envoyer un tweet', service: 'Twitter', icon: 'logo-twitter' },
-];
+const getIconName = (serviceName: string) => {
+  const name = serviceName.toLowerCase();
+  if (name.includes('google') || name.includes('gmail')) return 'logo-google';
+  if (name.includes('github')) return 'logo-github';
+  if (name.includes('discord')) return 'logo-discord';
+  if (name.includes('time')) return 'time';
+  return 'cube';
+};
 
 export default function CreateAreaScreen() {
   const router = useRouter();
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+  const params = useLocalSearchParams();
 
-  const handleCreate = () => {
-    Alert.alert('Succès', 'Automation créée avec succès !');
-    router.replace('/(tabs)');
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState<Service[]>([]);
+
+  const [actionService, setActionService] = useState<Service | null>(null);
+  const [selectedAction, setSelectedAction] = useState<ServiceItem | null>(null);
+
+  const [reactionService, setReactionService] = useState<Service | null>(null);
+  const [selectedReaction, setSelectedReaction] = useState<ServiceItem | null>(null);
+
+  const [configValues, setConfigValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await fetchAbout();
+        if (res.success && res.data.server?.services) {
+          setServices(res.data.server.services);
+          if (params.serviceData) {
+            const preSelected = JSON.parse(params.serviceData as string);
+            const found = res.data.server.services.find(
+              (s: Service) => s.name === preSelected.name
+            );
+            if (found) {
+              setActionService(found);
+              setStep(2);
+            }
+          }
+        }
+      } catch (e) {
+        Alert.alert('Erreur', 'Impossible de charger les services');
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  const handleConfigChange = (key: string, value: string) => {
+    setConfigValues((prev) => ({ ...prev, [key]: value }));
   };
+
+  const handleNext = () => {
+    if (step === 3 && selectedAction?.configFields) {
+      for (const field of selectedAction.configFields) {
+        if (field.required && !configValues[field.name]) {
+          Alert.alert('Manquant', `Le champ ${field.label} est requis.`);
+          return;
+        }
+      }
+    }
+    if (step === 6 && selectedReaction?.configFields) {
+      for (const field of selectedReaction.configFields) {
+        if (field.required && !configValues[field.name]) {
+          Alert.alert('Manquant', `Le champ ${field.label} est requis.`);
+          return;
+        }
+      }
+    }
+    setStep(step + 1);
+  };
+
+  const handleCreate = async () => {
+    if (!selectedAction || !selectedReaction || !actionService || !reactionService) return;
+
+    setLoading(true);
+
+    const finalParams = { ...configValues };
+
+    if (reactionService.name === 'discord' && !finalParams.username) {
+      finalParams.username = 'Area Bot';
+    }
+
+    const result = await createArea(
+      actionService.name.toLowerCase(),
+      selectedAction.name,
+      reactionService.name.toLowerCase(),
+      selectedReaction.name,
+      finalParams
+    );
+    setLoading(false);
+
+    if (result.success) {
+      Alert.alert('Succès', 'Automation créée avec succès !');
+      router.replace('/(tabs)/areas');
+    } else {
+      Alert.alert('Erreur', 'Échec de la création. Vérifiez les paramètres.');
+    }
+  };
+
+  const renderConfigFields = (fields: ConfigField[]) => (
+    <View>
+      {fields.map((field) => (
+        <View key={field.name} style={styles.inputGroup}>
+          <Text style={styles.label}>
+            {field.label} {field.required && '*'}
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder={field.placeholder || 'Entrez une valeur...'}
+            placeholderTextColor="#CCC"
+            value={configValues[field.name] || ''}
+            onChangeText={(text) => handleConfigChange(field.name, text)}
+            autoCapitalize="none"
+          />
+        </View>
+      ))}
+    </View>
+  );
+
+  const renderGrid = (items: Service[], onSelect: (s: Service) => void) => (
+    <View style={styles.grid}>
+      {items.map((srv) => (
+        <TouchableOpacity key={srv.name} style={styles.card} onPress={() => onSelect(srv)}>
+          <View style={styles.iconWrapper}>
+            <Ionicons name={getIconName(srv.name) as any} size={32} color={COLORS.h1} />
+          </View>
+          <Text style={styles.cardTitle}>{srv.name}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderList = (items: ServiceItem[], onSelect: (i: ServiceItem) => void) => (
+    <View>
+      {items.map((item) => (
+        <TouchableOpacity key={item.name} style={styles.rowItem} onPress={() => onSelect(item)}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>{item.name.replace(/_/g, ' ')}</Text>
+            <Text style={styles.rowDesc}>{item.description}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#CCC" />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  if (loading)
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.link} />
+      </View>
+    );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => router.navigate('/(tabs)/explore')} 
-          style={styles.backButton}
+        <TouchableOpacity
+          onPress={() => (step > 1 ? setStep(step - 1) : router.back())}
+          style={styles.backBtn}
         >
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nouvelle Automation</Text>
+        <Text style={styles.stepTitle}>
+          {step === 1 && 'Service Déclencheur'}
+          {step === 2 && "Choisir l'Action"}
+          {step === 3 && "Configurer l'Action"}
+          {step === 4 && 'Service Réaction'}
+          {step === 5 && 'Choisir la Réaction'}
+          {step === 6 && 'Configurer la Réaction'}
+          {step === 7 && 'Résumé'}
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.section}>
-          <Text style={styles.stepTitle}>01. SI CECI ARRIVE</Text>
-          {ACTIONS.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.optionCard, selectedAction === item.id && styles.optionSelected]}
-              onPress={() => setSelectedAction(item.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconBox, selectedAction === item.id && styles.iconBoxSelected]}>
-                <Ionicons name={item.icon as any} size={24} color={selectedAction === item.id ? '#FFF' : COLORS.h1} />
-              </View>
-              <View style={styles.textContainer}>
-                <Text style={[styles.serviceText, selectedAction === item.id && styles.textSelected]}>{item.service}</Text>
-                <Text style={[styles.nameText, selectedAction === item.id && styles.textSelected]}>{item.name}</Text>
-              </View>
-              {selectedAction === item.id && <Ionicons name="checkmark-circle" size={24} color={COLORS.link} />}
-            </TouchableOpacity>
-          ))}
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.content}>
+          {step === 1 &&
+            renderGrid(services, (s) => {
+              setActionService(s);
+              setStep(2);
+            })}
 
-        <View style={styles.section}>
-          <Text style={styles.stepTitle}>02. ALORS FAIRE CELA</Text>
-          {REACTIONS.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.optionCard, selectedReaction === item.id && styles.optionSelected]}
-              onPress={() => setSelectedReaction(item.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconBox, selectedReaction === item.id && styles.iconBoxSelected]}>
-                <Ionicons name={item.icon as any} size={24} color={selectedReaction === item.id ? '#FFF' : COLORS.h1} />
-              </View>
-              <View style={styles.textContainer}>
-                <Text style={[styles.serviceText, selectedReaction === item.id && styles.textSelected]}>{item.service}</Text>
-                <Text style={[styles.nameText, selectedReaction === item.id && styles.textSelected]}>{item.name}</Text>
-              </View>
-              {selectedReaction === item.id && <Ionicons name="checkmark-circle" size={24} color={COLORS.link} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+          {step === 2 &&
+            actionService &&
+            renderList(actionService.actions, (a) => {
+              setSelectedAction(a);
+              setStep(a.configFields && a.configFields.length > 0 ? 3 : 4);
+            })}
 
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.createButton, (!selectedAction || !selectedReaction) && styles.createButtonDisabled]} 
-          onPress={handleCreate}
-          disabled={!selectedAction || !selectedReaction}
-        >
-          <Text style={styles.createButtonText}>Confirmer la création</Text>
-        </TouchableOpacity>
-      </View>
+          {step === 3 && selectedAction?.configFields && (
+            <View>
+              <Text style={styles.sectionTitle}>Paramètres pour {selectedAction.name}</Text>
+              {renderConfigFields(selectedAction.configFields)}
+              <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+                <Text style={styles.btnText}>Suivant</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {step === 4 &&
+            renderGrid(services, (s) => {
+              setReactionService(s);
+              setStep(5);
+            })}
+
+          {step === 5 &&
+            reactionService &&
+            renderList(reactionService.reactions, (r) => {
+              setSelectedReaction(r);
+              setStep(r.configFields && r.configFields.length > 0 ? 6 : 7);
+            })}
+
+          {step === 6 && selectedReaction?.configFields && (
+            <View>
+              <Text style={styles.sectionTitle}>Paramètres pour {selectedReaction.name}</Text>
+              {renderConfigFields(selectedReaction.configFields)}
+              <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+                <Text style={styles.btnText}>Suivant</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {step === 7 && (
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Ionicons
+                  name={getIconName(actionService?.name || '') as any}
+                  size={28}
+                  color={COLORS.h1}
+                />
+                <View style={{ marginLeft: 12 }}>
+                  <Text style={styles.summaryTitle}>{actionService?.name}</Text>
+                  <Text style={styles.summarySub}>{selectedAction?.description}</Text>
+                </View>
+              </View>
+
+              <View style={styles.arrowContainer}>
+                <Ionicons name="arrow-down" size={24} color={COLORS.link} />
+              </View>
+
+              <View style={styles.summaryRow}>
+                <Ionicons
+                  name={getIconName(reactionService?.name || '') as any}
+                  size={28}
+                  color={COLORS.h1}
+                />
+                <View style={{ marginLeft: 12 }}>
+                  <Text style={styles.summaryTitle}>{reactionService?.name}</Text>
+                  <Text style={styles.summarySub}>{selectedReaction?.description}</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.createBtn} onPress={handleCreate}>
+                <Text style={styles.btnText}>Activer l'Automation</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 20,
+    paddingTop: 40,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 18,
-    color: COLORS.h1,
-    marginLeft: 16,
-  },
-  scroll: {
-    padding: 24,
-    paddingBottom: 100,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  stepTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 13,
-    color: COLORS.h2,
-    marginBottom: 16,
-    letterSpacing: 1,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    shadowColor: COLORS.h1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  optionSelected: {
-    borderColor: COLORS.link,
-    backgroundColor: '#FFFFFF',
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  iconBoxSelected: {
-    backgroundColor: COLORS.link,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  serviceText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: COLORS.h2,
-    marginBottom: 2,
-    textTransform: 'uppercase',
-  },
-  nameText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  textSelected: {
-    color: COLORS.link,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 24,
-    backgroundColor: COLORS.background,
-  },
-  createButton: {
-    backgroundColor: COLORS.link,
-    height: 56,
+  backBtn: { marginRight: 15 },
+  stepTitle: { fontFamily: 'Inter_700Bold', fontSize: 18, color: COLORS.text },
+  content: { padding: 20, paddingBottom: 50 },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  card: {
+    width: '48%',
+    aspectRatio: 1,
+    backgroundColor: '#FFF',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.link,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  createButtonDisabled: {
-    backgroundColor: '#A69CAC',
-    shadowOpacity: 0,
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
+  iconWrapper: { marginBottom: 10 },
+  cardTitle: {
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
+    color: COLORS.h1,
+    textTransform: 'capitalize',
   },
+
+  rowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  rowTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: COLORS.text,
+    marginBottom: 4,
+    textTransform: 'capitalize',
+  },
+  rowDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#888' },
+
+  inputGroup: { marginBottom: 20 },
+  label: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: COLORS.text, marginBottom: 8 },
+  input: {
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 18, color: COLORS.h1, marginBottom: 20 },
+
+  nextBtn: {
+    backgroundColor: COLORS.link,
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  createBtn: {
+    backgroundColor: '#4CAF50',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 30,
+    shadowColor: '#4CAF50',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  btnText: { color: '#FFF', fontFamily: 'Inter_700Bold', fontSize: 16 },
+
+  summaryCard: {
+    backgroundColor: '#FFF',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  summaryRow: { flexDirection: 'row', alignItems: 'center' },
+  summaryTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: COLORS.h1,
+    textTransform: 'capitalize',
+  },
+  summarySub: { fontFamily: 'Inter_500Medium', fontSize: 14, color: '#888', marginTop: 2 },
+  arrowContainer: { alignItems: 'center', paddingVertical: 20 },
 });

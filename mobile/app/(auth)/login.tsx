@@ -1,12 +1,23 @@
 /*
-** EPITECH PROJECT, 2025
-** Area-miror
-** File description:
-** login
-*/
+ ** EPITECH PROJECT, 2025
+ ** Area-miror
+ ** File description:
+ ** login
+ */
 
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Text,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  Linking,
+} from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '@/constants/theme';
@@ -58,7 +69,6 @@ export default function LoginScreen() {
               if (supported) {
                 await Linking.openURL(url);
 
-                // Show prompt to enter token after OAuth
                 setTimeout(() => {
                   Alert.prompt(
                     'Token reçu',
@@ -89,7 +99,7 @@ export default function LoginScreen() {
                   );
                 }, 2000);
               } else {
-                Alert.alert('Erreur', 'Impossible d\'ouvrir le navigateur');
+                Alert.alert('Erreur', "Impossible d'ouvrir le navigateur");
               }
             },
           },
@@ -102,8 +112,10 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.content}>
-        
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.content}
+      >
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bonjour,</Text>
           <Text style={styles.titleText}>Bienvenue !</Text>
@@ -135,9 +147,9 @@ export default function LoginScreen() {
             />
           </View>
 
-          <TouchableOpacity 
-            style={[styles.loginButton, loading && { opacity: 0.7 }]} 
-            onPress={handleLogin} 
+          <TouchableOpacity
+            style={[styles.loginButton, loading && { opacity: 0.7 }]}
+            onPress={handleLogin}
             activeOpacity={0.8}
             disabled={loading}
           >
@@ -184,7 +196,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Link>
         </View>
-
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

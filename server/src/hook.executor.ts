@@ -82,10 +82,16 @@ export class HookExecutor {
     let triggered = false;
 
     if (area.actionService === 'gmail' && area.actionType === 'email_received') {
-      triggered = await this.gmailAction.checkEmailReceived(area.userId, area.actionConfig);
+      triggered = await this.gmailAction.checkEmailReceived(
+        area.userId,
+        area.actionConfig,
+        area.lastTriggered
+      );
     } else if (area.actionService === 'timer') {
       if (area.actionType === 'time_reached') {
-        triggered = this.timerAction.checkTimeReached(area.actionConfig as { hour: number; minute: number });
+        triggered = this.timerAction.checkTimeReached(
+          area.actionConfig as { hour: number; minute: number }
+        );
       } else if (area.actionType === 'date_reached') {
         triggered = this.timerAction.checkDateReached(area.actionConfig as { date: string });
       } else if (area.actionType === 'day_of_week') {
@@ -117,12 +123,22 @@ export class HookExecutor {
       } else if (area.actionService === 'timer') {
         if (area.actionType === 'time_reached') {
           const { hour, minute } = area.actionConfig as { hour: number; minute: number };
-          message = reactionConfig?.message || `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
+          message =
+            reactionConfig?.message ||
+            `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
         } else if (area.actionType === 'date_reached') {
           const { date } = area.actionConfig as { date: string };
           message = reactionConfig?.message || `📅 Date alert: ${date}`;
         } else if (area.actionType === 'day_of_week') {
-          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const days = [
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+          ];
           const { dayOfWeek } = area.actionConfig as { dayOfWeek: number };
           const dayName = days[dayOfWeek];
           message = reactionConfig?.message || `📆 It's ${dayName}!`;
@@ -131,7 +147,11 @@ export class HookExecutor {
 
       await this.discordReaction.sendMessage(webhookUrl, message);
     } else if (area.reactionService === 'gmail' && area.reactionType === 'send_email') {
-      const { to, subject, body } = area.reactionConfig as { to: string; subject: string; body: string };
+      const { to, subject, body } = area.reactionConfig as {
+        to: string;
+        subject: string;
+        body: string;
+      };
 
       if (!to || !subject || !body) {
         console.error(`[Hook Executor] Missing email configuration for area ${area.id}`);
@@ -149,9 +169,12 @@ export class HookExecutor {
 
     this.execute();
 
-    this.intervalId = setInterval(() => {
-      this.execute();
-    }, intervalMinutes * 60 * 1000);
+    this.intervalId = setInterval(
+      () => {
+        this.execute();
+      },
+      intervalMinutes * 60 * 1000
+    );
   }
 
   stop() {

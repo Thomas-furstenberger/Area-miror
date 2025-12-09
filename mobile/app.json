@@ -3,7 +3,7 @@
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
-    "scheme": "myapp",
+    "scheme": "mobile",
     "sdkVersion": "54.0.0",
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -37,7 +37,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
