@@ -47,10 +47,10 @@ export default function CreateAreaPage() {
   const [areaDescription, setAreaDescription] = useState('');
   const [selectedActionService, setSelectedActionService] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
-  const [actionConfig, setActionConfig] = useState<Record<string, any>>({});
+  const [actionConfig, setActionConfig] = useState<Record<string, string | number | boolean>>({});
   const [selectedReactionService, setSelectedReactionService] = useState('');
   const [selectedReaction, setSelectedReaction] = useState('');
-  const [reactionConfig, setReactionConfig] = useState<Record<string, any>>({});
+  const [reactionConfig, setReactionConfig] = useState<Record<string, string | number | boolean>>({});
 
   useEffect(() => {
     fetchServices();
@@ -133,18 +133,18 @@ export default function CreateAreaPage() {
     return reaction?.configFields || [];
   };
 
-  const handleActionConfigChange = (fieldName: string, value: any) => {
+  const handleActionConfigChange = (fieldName: string, value: string | number | boolean) => {
     setActionConfig({ ...actionConfig, [fieldName]: value });
   };
 
-  const handleReactionConfigChange = (fieldName: string, value: any) => {
+  const handleReactionConfigChange = (fieldName: string, value: string | number | boolean) => {
     setReactionConfig({ ...reactionConfig, [fieldName]: value });
   };
 
   const renderConfigField = (
     field: ConfigField,
-    value: any,
-    onChange: (name: string, value: any) => void
+    value: string | number | boolean | undefined,
+    onChange: (name: string, value: string | number | boolean) => void
   ) => {
     const baseClasses =
       'w-full px-4 py-3 border-2 border-secondary rounded-lg focus:border-primary focus:outline-none transition-colors';
@@ -154,7 +154,7 @@ export default function CreateAreaPage() {
         return (
           <textarea
             required={field.required}
-            value={value || ''}
+            value={String(value || '')}
             onChange={(e) => onChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             rows={3}
@@ -165,7 +165,7 @@ export default function CreateAreaPage() {
         return (
           <select
             required={field.required}
-            value={value || ''}
+            value={String(value || '')}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${baseClasses} bg-white`}
           >
@@ -182,7 +182,7 @@ export default function CreateAreaPage() {
           <input
             type={field.type}
             required={field.required}
-            value={value || ''}
+            value={String(value || '')}
             onChange={(e) => onChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             className={baseClasses}

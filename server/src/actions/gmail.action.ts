@@ -79,7 +79,11 @@ export class GmailAction {
         }
       );
 
-      const messageData = await messageResponse.json();
+      const messageData = await messageResponse.json() as {
+        payload?: {
+          headers?: Array<{ name: string; value: string }>;
+        };
+      };
       const subjectHeader = messageData.payload?.headers?.find(
         (h: { name: string; value: string }) => h.name === 'Subject'
       );

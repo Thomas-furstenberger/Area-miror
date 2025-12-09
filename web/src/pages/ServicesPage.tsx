@@ -73,6 +73,7 @@ export default function ServicesPage() {
     }
 
     fetchConnectedServices();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConnectedServices = async () => {

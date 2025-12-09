@@ -15,7 +15,7 @@ export const register = async (email: string, password: string, name: string) =>
     const data = await response.json();
     if (!response.ok) return { success: false, error: data.error || 'Erreur inconnue' };
     return { success: true, data };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Erreur serveur' };
   }
 };
@@ -30,7 +30,7 @@ export const login = async (email: string, password: string) => {
     const data = await response.json();
     if (!response.ok) return { success: false, error: data.error || 'Erreur inconnue' };
     return { success: true, data };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Erreur serveur' };
   }
 };
@@ -51,7 +51,7 @@ export const me = async () => {
       return { success: false, error: data.error };
     }
     return { success: true, data };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Erreur serveur' };
   }
 };

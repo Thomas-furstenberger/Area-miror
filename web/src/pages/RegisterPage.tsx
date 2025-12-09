@@ -19,8 +19,9 @@ export default function RegisterPage() {
 
     if (result.success) {
       // Store token if provided
-      if (result.accessToken || result.sessionToken) {
-        localStorage.setItem('token', result.sessionToken || result.accessToken);
+      const data = result.data as { accessToken?: string; sessionToken?: string };
+      if (data?.accessToken || data?.sessionToken) {
+        localStorage.setItem('token', data.sessionToken || data.accessToken || '');
         navigate('/services');
       } else {
         navigate('/login', { state: { message: 'Compte créé ! Connecte-toi.' } });

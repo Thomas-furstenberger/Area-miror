@@ -18,8 +18,6 @@ fastify.register(cors, {
   origin: [
     'http://localhost:5173',
     'http://localhost:8081',
-    'http://172.20.10.10:3000',
-    'http://172.20.10.10:8081',
     'https://web-production-963ad.up.railway.app',
     'https://mobile-production-e73e.up.railway.app',
     /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // Allow local network IPs
@@ -589,10 +587,10 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
 const start = async () => {
   try {
     await fastify.listen({
-      port: parseInt(process.env.PORT || '3000'),
+      port: parseInt(process.env.PORT || '8080'),
       host: process.env.HOST || '0.0.0.0',
     });
-    console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+    console.log(`Server running on http://localhost:${process.env.PORT || 8080}`);
 
     // Start the hook executor
     hookExecutor.start(2); // Check every 2 minutes
@@ -668,6 +666,7 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     const tokenData = (await tokenResponse.json()) as {
       access_token: string;
       refresh_token?: string;
+      expires_in?: number;
     };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;

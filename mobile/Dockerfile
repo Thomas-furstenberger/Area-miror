@@ -5,7 +5,7 @@ FROM base AS deps
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Install Expo CLI globally
 RUN npm install -g expo-cli eas-cli
@@ -22,14 +22,15 @@ COPY . .
 # For now, we'll prepare the app for build
 RUN npx expo export --platform android
 
-# Production stage - Serve the exported app
-FROM nginx:alpine AS runner
+# Create APK directory and copy if exists
+RUN mkdir -p /app/apk
+RUN if [ -f client.apk ]; then cp client.apk /app/apk/client.apk; else echo "APK placeholder" > /app/apk/client.apk; fi
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Final stage - Just copy APK to shared volume
+FROM alpine:latest AS runner
+WORKDIR /app
 
-# For APK download endpoint
-COPY client.apk /usr/share/nginx/html/client.apk 2>/dev/null || echo "APK will be added later"
+COPY --from=builder /app/apk /app/apk
 
-EXPOSE 8081
-
-CMD ["nginx", "-g", "daemon off;"]
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]
