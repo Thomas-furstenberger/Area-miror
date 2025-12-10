@@ -45,7 +45,7 @@ export class GmailAction {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
-      const messageData = await detailResponse.json();
+      const messageData = (await detailResponse.json()) as { internalDate: string };
       const emailDate = parseInt(messageData.internalDate);
 
       if (!lastTriggered) {

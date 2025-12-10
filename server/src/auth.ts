@@ -14,19 +14,11 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function generateAccessToken(userId: number, email: string): string {
-  return jwt.sign(
-    { userId, email },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
+  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '24h' });
 }
 
 export function generateRefreshToken(userId: number): string {
-  return jwt.sign(
-    { userId },
-    JWT_SECRET,
-    { expiresIn: '30d' }
-  );
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
 }
 
 export function verifyAccessToken(token: string): { userId: number; email: string } | null {

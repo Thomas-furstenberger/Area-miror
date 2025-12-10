@@ -56,7 +56,11 @@ export class GmailService {
       throw new Error(`Impossible de rafraîchir le token: ${errorText}`);
     }
 
-    const data = await response.json() as { access_token: string; refresh_token?: string; expires_in: number };
+    const data = (await response.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+    };
 
     const newExpiresAt = new Date(Date.now() + data.expires_in * 1000);
 

@@ -151,8 +151,7 @@ export const SERVICES: ServiceConfig[] = [
   },
   {
     name: 'discord',
-    actions: [
-    ],
+    actions: [],
     reactions: [
       {
         name: 'send_message',

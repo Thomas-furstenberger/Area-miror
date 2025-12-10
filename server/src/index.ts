@@ -42,7 +42,15 @@ interface IdParams {
   id: string;
 }
 
-const handleAuthRedirect = (reply: any, token: string, state?: string, userAgent?: string) => {
+const handleAuthRedirect = (
+  reply: {
+    redirect: (url: string) => void;
+    type: (type: string) => { send: (html: string) => void };
+  },
+  token: string,
+  state?: string,
+  userAgent?: string
+) => {
   if (
     state &&
     (state.startsWith('exp://') || state.startsWith('http://') || state.startsWith('https://'))
@@ -351,8 +359,8 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
             `${frontendUrl}/services?token=${encodeURIComponent(state)}&service=github&connected=true`
           );
         }
-      } catch (e) {
-        /* ignore */
+      } catch (error) {
+        console.error('[OAuth] Error connecting account:', error);
       }
     }
 
@@ -404,38 +412,6 @@ fastify.get('/api/user/oauth-accounts', async (request, _reply) => {
   } catch (error) {
     fastify.log.error(error);
     return _reply.status(500).send({ error: 'Failed to fetch OAuth accounts' });
-  }
-});
-
-// Disconnect OAuth account
-fastify.post('/api/user/oauth/disconnect/:provider', async (request, _reply) => {
-  try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader) return _reply.status(401).send({ error: 'No token provided' });
-
-    const token = authHeader.split(' ')[1];
-    const session = await userService.getSessionByToken(token);
-
-    if (!session) return _reply.status(401).send({ error: 'Invalid token' });
-
-    const { provider } = request.params as { provider: string };
-
-    const oauthAccounts = await prisma.oAuthAccount.findMany({
-      where: { userId: session.user.id },
-    });
-
-    if (oauthAccounts.length === 1 && provider === 'github') {
-      return _reply.status(400).send({ error: 'Cannot disconnect only auth method' });
-    }
-
-    await prisma.oAuthAccount.deleteMany({
-      where: { userId: session.user.id, provider },
-    });
-
-    return { success: true, message: `${provider} account disconnected` };
-  } catch (error) {
-    fastify.log.error(error);
-    return _reply.status(500).send({ error: 'Failed to disconnect OAuth account' });
   }
 });
 
@@ -543,7 +519,9 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
             `${frontendUrl}/services?token=${encodeURIComponent(state)}&service=discord&connected=true`
           );
         }
-      } catch (e) {}
+      } catch (error) {
+        console.error('[OAuth] Error connecting account:', error);
+      }
     }
 
     const user = await userService.findOrCreateOAuthUser('DISCORD', discordUser.id, {
@@ -623,7 +601,11 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     });
 
     if (!tokenResponse.ok) return _reply.status(401).send({ error: `Token fail` });
-    const tokenData = (await tokenResponse.json()) as any;
+    const tokenData = (await tokenResponse.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+    };
     const accessToken = tokenData.access_token;
     const refreshToken = tokenData.refresh_token;
 
@@ -632,7 +614,13 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
     });
 
     if (!userResponse.ok) return _reply.status(401).send({ error: 'User info fail' });
-    const googleUser = (await userResponse.json()) as any;
+    const googleUser = (await userResponse.json()) as {
+      sub: string;
+      email: string;
+      name: string;
+      given_name: string;
+      picture: string;
+    };
 
     if (state && !state.startsWith('exp://') && !state.includes('://')) {
       try {
@@ -663,7 +651,9 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
             `${frontendUrl}/services?token=${encodeURIComponent(state)}&service=gmail&connected=true`
           );
         }
-      } catch (e) {}
+      } catch (error) {
+        console.error('[OAuth] Error connecting account:', error);
+      }
     }
 
     const user = await userService.findOrCreateOAuthUser('GOOGLE', googleUser.sub, {
@@ -787,7 +777,7 @@ fastify.post('/api/area/gmail/send_email', async (request, _reply) => {
     const { to, subject, body } = request.body as { to: string; subject: string; body: string };
     if (!to || !subject || !body) return _reply.status(400).send({ error: 'Paramètres manquants' });
     const result = await gmailService.sendEmail(session.user.id, to, subject, body);
-    return { success: true, message: 'Email envoyé', googleId: (result as any).id };
+    return { success: true, message: 'Email envoyé', googleId: (result as { id: string }).id };
   } catch (error) {
     fastify.log.error(error);
     if ((error as Error).message.includes('RefreshToken'))
@@ -796,30 +786,6 @@ fastify.post('/api/area/gmail/send_email', async (request, _reply) => {
       .status(500)
       .send({ error: "Échec de l'envoi", details: (error as Error).message });
   }
-});
-
-// Google Drive
-fastify.get('/api/auth/google-drive', async (request, _reply) => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.DRIVE_CALLBACK_URL;
-  const scope =
-    'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive';
-  if (!clientId || !redirectUri)
-    return _reply.status(500).send({ error: 'Configuration Google manquante' });
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
-  return _reply.redirect(authUrl);
-});
-
-fastify.get('/api/auth/drive/callback', async (request, _reply) => {
-  const userAgent = request.headers['user-agent'];
-  if (userAgent?.toLowerCase().includes('mobile')) {
-    return _reply
-      .type('text/html')
-      .send(
-        '<html><body><h1>Drive Connecté !</h1><p>Vous pouvez fermer cette page.</p></body></html>'
-      );
-  }
-  return _reply.redirect(`http://localhost:8081/login/success?token=DRIVE_CONNECTED`);
 });
 
 // GitHub Repos
@@ -845,7 +811,14 @@ fastify.get('/api/github/repos', async (request, _reply) => {
     });
 
     if (!response.ok) return _reply.status(response.status).send({ error: 'Erreur GitHub API' });
-    const repos = (await response.json()) as any[];
+    const repos = (await response.json()) as Array<{
+      id: number;
+      name: string;
+      full_name: string;
+      description: string;
+      private: boolean;
+      html_url: string;
+    }>;
     const formattedRepos = Array.isArray(repos)
       ? repos.map((repo) => ({
           id: repo.id,

@@ -3,16 +3,19 @@ import { PrismaClient } from '@prisma/client';
 export class AreaService {
   constructor(private prisma: PrismaClient) {}
 
-  async createArea(userId: number, data: {
-    name: string;
-    description?: string;
-    actionService: string;
-    actionType: string;
-    actionConfig?: Record<string, unknown>;
-    reactionService: string;
-    reactionType: string;
-    reactionConfig?: Record<string, unknown>;
-  }) {
+  async createArea(
+    userId: number,
+    data: {
+      name: string;
+      description?: string;
+      actionService: string;
+      actionType: string;
+      actionConfig?: Record<string, unknown>;
+      reactionService: string;
+      reactionType: string;
+      reactionConfig?: Record<string, unknown>;
+    }
+  ) {
     return this.prisma.area.create({
       data: {
         userId,
