@@ -546,10 +546,10 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
 const start = async () => {
   try {
     await fastify.listen({
-      port: parseInt(process.env.PORT || '3000'),
+      port: parseInt(process.env.PORT || '8080'),
       host: process.env.HOST || '0.0.0.0',
     });
-    console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+    console.log(`Server running on http://localhost:${process.env.PORT || 8080}`);
     hookExecutor.start(2);
     console.log('Hook executor started');
   } catch (err) {

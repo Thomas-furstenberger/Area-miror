@@ -5,7 +5,7 @@ services:
     container_name: area_database
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-area_user}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-area_password}
       POSTGRES_DB: ${POSTGRES_DB:-area_db}
     ports:
@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-area_user}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,7 +28,7 @@ services:
     ports:
       - "${SERVER_PORT:-8080}:8080"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-area_user}:${POSTGRES_PASSWORD:-area_password}@db:5432/${POSTGRES_DB:-area_db}?sslmode=disable
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-area_password}@db:5432/${POSTGRES_DB:-area_db}?sslmode=disable
       PORT: 8080
       HOST: 0.0.0.0
       NODE_ENV: production
@@ -42,6 +42,8 @@ services:
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
       DISCORD_CALLBACK_URL: ${DISCORD_CALLBACK_URL:-http://localhost:8080/api/auth/discord/callback}
+      MOBILE_REDIRECT_URI: ${MOBILE_REDIRECT_URI:-http://localhost:8081}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8081}
     depends_on:
       db:
         condition: service_healthy

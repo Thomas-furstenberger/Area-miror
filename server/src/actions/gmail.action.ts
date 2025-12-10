@@ -4,7 +4,7 @@ import { GmailService } from '../reactions/gmail.reaction';
 export class GmailAction {
   private gmailService: GmailService;
 
-  constructor(private prisma: PrismaClient) {
+  constructor(prisma: PrismaClient) {
     this.gmailService = new GmailService(prisma);
   }
 

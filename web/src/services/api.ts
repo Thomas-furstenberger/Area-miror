@@ -79,7 +79,8 @@ export interface Service {
 
 export const getServices = async () => {
   try {
-    const response = await fetch('http://localhost:3000/about.json');
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${apiUrl}/about.json`);
     if (!response.ok) throw new Error('Network response was not ok');
 
     const data = await response.json();

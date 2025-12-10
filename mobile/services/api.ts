@@ -99,26 +99,7 @@ export const getUserAreas = async () => {
 };
 
 export const deleteAutomation = async (id: string) => {
-  try {
-    const token = await AsyncStorage.getItem('user_token');
-
-    const response = await fetch(`${API_URL}/api/areas/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Erreur lors de la suppression');
-    }
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('[API Error] Delete:', error.message);
-    return { success: false, error: error.message };
-  }
+  return apiCall(`/api/areas/${id}`, 'DELETE');
 };
 
 export const deleteArea = async (id: string) => {
