@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 
-// Type inferred from Prisma
 type Area = {
   id: string;
   userId: number;
@@ -20,6 +19,7 @@ type Area = {
 import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';
+import { GithubAction } from './actions/github.action';
 import { DiscordReaction } from './reactions/discord.reaction';
 import { GmailService } from './reactions/gmail.reaction';
 
@@ -27,6 +27,7 @@ export class HookExecutor {
   private areaService: AreaService;
   private gmailAction: GmailAction;
   private timerAction: TimerAction;
+  private githubAction: GithubAction;
   private discordReaction: DiscordReaction;
   private gmailService: GmailService;
   private isRunning: boolean = false;
@@ -37,6 +38,7 @@ export class HookExecutor {
     this.areaService = new AreaService(prisma);
     this.gmailAction = new GmailAction(prisma);
     this.timerAction = new TimerAction();
+    this.githubAction = new GithubAction(prisma);
     this.discordReaction = new DiscordReaction();
     this.gmailService = new GmailService(prisma);
   }
@@ -72,10 +74,18 @@ export class HookExecutor {
   private async processArea(area: Area) {
     console.log(`[Hook Executor] Processing area: ${area.name} (${area.id})`);
 
+    if (!area.lastTriggered) {
+      console.log(
+        `[Hook Executor] Init: Initialisation de la date de référence pour l'area ${area.name}`
+      );
+      await this.areaService.updateLastTriggered(area.id);
+      return;
+    }
+
     const lastTriggered = this.lastTriggeredAreas.get(area.id);
     const now = new Date();
 
-    if (lastTriggered && now.getTime() - lastTriggered.getTime() < 120000) {
+    if (lastTriggered && now.getTime() - lastTriggered.getTime() < 60000) {
       return;
     }
 
@@ -85,6 +95,12 @@ export class HookExecutor {
       triggered = await this.gmailAction.checkEmailReceived(
         area.userId,
         area.actionConfig,
+        area.lastTriggered
+      );
+    } else if (area.actionService === 'github' && area.actionType === 'new_commit') {
+      triggered = await this.githubAction.checkNewCommit(
+        area.userId,
+        area.actionConfig as { repo_owner: string; repo_name: string },
         area.lastTriggered
       );
     } else if (area.actionService === 'timer') {
@@ -120,28 +136,14 @@ export class HookExecutor {
       if (area.actionService === 'gmail') {
         const emailSubject = await this.gmailAction.getLatestEmailSubject(area.userId);
         message = reactionConfig?.message || `📧 New email received: ${emailSubject}`;
+      } else if (area.actionService === 'github') {
+        message = reactionConfig?.message || `💻 New commit detected on repository!`;
       } else if (area.actionService === 'timer') {
         if (area.actionType === 'time_reached') {
           const { hour, minute } = area.actionConfig as { hour: number; minute: number };
           message =
             reactionConfig?.message ||
             `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
-        } else if (area.actionType === 'date_reached') {
-          const { date } = area.actionConfig as { date: string };
-          message = reactionConfig?.message || `📅 Date alert: ${date}`;
-        } else if (area.actionType === 'day_of_week') {
-          const days = [
-            'Sunday',
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-            'Saturday',
-          ];
-          const { dayOfWeek } = area.actionConfig as { dayOfWeek: number };
-          const dayName = days[dayOfWeek];
-          message = reactionConfig?.message || `📆 It's ${dayName}!`;
         }
       }
 
@@ -159,6 +161,14 @@ export class HookExecutor {
       }
 
       await this.gmailService.sendEmail(area.userId, to, subject, body);
+    } else if (area.reactionService === 'github' && area.reactionType === 'create_issue') {
+      const config = area.reactionConfig as {
+        repo_owner: string;
+        repo_name: string;
+        title: string;
+        body: string;
+      };
+      await this.githubAction.createIssue(area.userId, config);
     }
 
     await this.areaService.updateLastTriggered(area.id);

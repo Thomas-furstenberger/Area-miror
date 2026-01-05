@@ -36,10 +36,13 @@ export const apiCall = async (
   const baseUrl = await getBaseUrl();
   const url = `${baseUrl}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+  const headers: any = {
     Accept: 'application/json',
   };
+
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const token = await AsyncStorage.getItem('user_token');
   if (token) {
@@ -114,12 +117,35 @@ export const register = async (email: string, password: string, name: string) =>
   return apiCall('/api/auth/register', 'POST', { email, password, name });
 };
 
+export const logoutUser = async () => {
+  try {
+    await AsyncStorage.removeItem('user_token');
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 export const getConnectedAccounts = async () => {
   return apiCall('/api/user/oauth-accounts', 'GET');
 };
 
 export const getAuthUrl = async (provider: string) => {
   const baseUrl = await getBaseUrl();
-  const redirectUrl = Linking.createURL('/login/success');
-  return `${baseUrl}/api/auth/${provider}?state=${encodeURIComponent(redirectUrl)}`;
+  let redirectUrl = Linking.createURL('/login/success');
+
+  if (redirectUrl.startsWith('exp://') && !redirectUrl.includes('/--/')) {
+    redirectUrl = redirectUrl.replace(/exp:\/\/([^/]+)\/(.*)/, 'exp://$1/--/$2');
+  }
+
+  const token = await AsyncStorage.getItem('user_token');
+
+  const stateData = JSON.stringify({
+    redirect: redirectUrl,
+    userToken: token,
+  });
+
+  console.log(`[OAuth] State généré : ${stateData}`);
+
+  return `${baseUrl}/api/auth/${provider}?state=${encodeURIComponent(stateData)}`;
 };

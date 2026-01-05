@@ -29,8 +29,66 @@ export interface ServiceConfig {
 export const SERVICES: ServiceConfig[] = [
   {
     name: 'github',
-    actions: [],
-    reactions: [],
+    actions: [
+      {
+        name: 'new_commit',
+        description: 'New commit on a repository',
+        configFields: [
+          {
+            name: 'repo_owner',
+            label: 'Propriétaire du repo',
+            type: 'text',
+            placeholder: 'ex: facebook',
+            required: true,
+            description: "Nom de l'utilisateur ou de l'organisation",
+          },
+          {
+            name: 'repo_name',
+            label: 'Nom du dépôt',
+            type: 'text',
+            placeholder: 'ex: react',
+            required: true,
+            description: 'Nom exact du dépôt',
+          },
+        ],
+      },
+    ],
+    reactions: [
+      {
+        name: 'create_issue',
+        description: 'Create a new issue',
+        configFields: [
+          {
+            name: 'repo_owner',
+            label: 'Propriétaire du repo',
+            type: 'text',
+            placeholder: 'ex: facebook',
+            required: true,
+          },
+          {
+            name: 'repo_name',
+            label: 'Nom du dépôt',
+            type: 'text',
+            placeholder: 'ex: react',
+            required: true,
+          },
+          {
+            name: 'title',
+            label: "Titre de l'issue",
+            type: 'text',
+            placeholder: 'Bug report...',
+            required: true,
+          },
+          {
+            name: 'body',
+            label: 'Description',
+            type: 'textarea',
+            placeholder: 'Détails du problème...',
+            required: true,
+          },
+        ],
+      },
+    ],
   },
   {
     name: 'timer',

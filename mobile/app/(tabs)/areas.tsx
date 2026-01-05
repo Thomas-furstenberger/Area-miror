@@ -14,6 +14,7 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { getUserAreas, deleteArea } from '@/services/api';
 
 const getIconName = (serviceName: string) => {
@@ -32,14 +33,19 @@ export default function AreasScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadAreas = async () => {
-    const result = await getUserAreas();
-    if (result.success && Array.isArray(result.data.areas)) {
-      setAreas(result.data.areas);
-    } else if (result.success && Array.isArray(result.data)) {
-      setAreas(result.data);
+    try {
+      const result = await getUserAreas();
+      if (result.success && Array.isArray(result.data.areas)) {
+        setAreas(result.data.areas);
+      } else if (result.success && Array.isArray(result.data)) {
+        setAreas(result.data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-    setRefreshing(false);
   };
 
   useFocusEffect(
@@ -48,15 +54,34 @@ export default function AreasScreen() {
     }, [])
   );
 
-  const handleDelete = (id: string) => {
-    Alert.alert('Supprimer', 'Voulez-vous arrêter cette automation ?', [
+  const handleDelete = async (id: string, name: string) => {
+    console.log(`[UI] Tentative de suppression de l'AREA : ${name} (ID: ${id})`);
+
+    if (!id) {
+      Alert.alert('Erreur', "ID de l'automation introuvable.");
+      return;
+    }
+
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+    Alert.alert('Supprimer', `Voulez-vous arrêter "${name}" ?`, [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          await deleteArea(id);
-          loadAreas();
+          try {
+            const result = await deleteArea(id);
+
+            if (result.success) {
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              loadAreas();
+            } else {
+              Alert.alert('Erreur', `Échec suppression : ${result.error || 'Erreur inconnue'}`);
+            }
+          } catch (err: any) {
+            Alert.alert('Erreur Critique', err.message);
+          }
         },
       },
     ]);
@@ -73,7 +98,10 @@ export default function AreasScreen() {
         </View>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => router.push('/create_area')}
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push('/create_area');
+          }}
           activeOpacity={0.8}
         >
           <Ionicons name="add" size={28} color="#FFF" />
@@ -87,6 +115,7 @@ export default function AreasScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => {
+              Haptics.selectionAsync();
               setRefreshing(true);
               loadAreas();
             }}
@@ -130,7 +159,10 @@ export default function AreasScreen() {
                     />
                   </View>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(area.id)} style={styles.deleteBtn}>
+                <TouchableOpacity
+                  onPress={() => handleDelete(area.id, area.name)}
+                  style={styles.deleteBtn}
+                >
                   <Ionicons name="trash-outline" size={20} color="#FF5252" />
                 </TouchableOpacity>
               </View>
@@ -138,7 +170,7 @@ export default function AreasScreen() {
               <Text style={styles.cardTitle}>{area.name || 'Automation sans nom'}</Text>
 
               <View style={styles.cardFooter}>
-                <Text style={styles.triggerText}>Si {area.actionType.replace(/_/g, ' ')}</Text>
+                <Text style={styles.triggerText}>Si {area.actionType?.replace(/_/g, ' ')}</Text>
                 <View style={styles.activeBadge}>
                   <View style={styles.activeDot} />
                   <Text style={styles.activeText}>Active</Text>
