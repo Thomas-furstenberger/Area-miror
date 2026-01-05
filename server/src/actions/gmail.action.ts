@@ -48,7 +48,7 @@ export class GmailAction {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
-      const messageData = await detailResponse.json();
+      const messageData = (await detailResponse.json()) as { internalDate: string };
       const emailDate = parseInt(messageData.internalDate); // Timestamp en millisecondes
 
       // 3. LOGIQUE DE COMPARAISON (C'est ici que ça corrige le bug)

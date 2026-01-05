@@ -28,7 +28,9 @@ export class GithubAction {
       });
 
       if (!response.ok) return false;
-      const commits = await response.json();
+      const commits = (await response.json()) as Array<{
+        commit: { committer: { date: string } };
+      }>;
 
       if (!commits || commits.length === 0) return false;
 
