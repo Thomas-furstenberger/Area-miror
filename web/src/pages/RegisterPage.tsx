@@ -15,19 +15,20 @@ export default function RegisterPage() {
     setError(null);
 
     const result = await register(formData.email, formData.password, formData.name);
-    setIsLoading(false);
 
-    if (result.success) {
-      // Store token if provided
-      const data = result.data as { accessToken?: string; sessionToken?: string };
-      if (data?.accessToken || data?.sessionToken) {
-        localStorage.setItem('token', data.sessionToken || data.accessToken || '');
+    if (result.success && result.data) {
+      const data = result.data;
+      const token = data.sessionToken || data.accessToken;
+
+      if (token) {
+        localStorage.setItem('token', token);
         navigate('/services');
       } else {
         navigate('/login', { state: { message: 'Compte créé ! Connecte-toi.' } });
       }
     } else {
-      setError(result.error);
+      setError(result.error || "Une erreur est survenue lors de l'inscription");
+      setIsLoading(false);
     }
   };
 
@@ -45,8 +46,8 @@ export default function RegisterPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded mb-4 flex items-center border border-red-200">
-            <AlertCircle size={20} className="mr-2" /> {error}
+          <div className="bg-red-50 text-red-700 p-3 rounded mb-4 flex items-center border border-red-200 text-sm">
+            <AlertCircle size={20} className="mr-2 flex-shrink-0" /> {error}
           </div>
         )}
 
@@ -96,9 +97,9 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#474973] text-white font-bold p-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md"
+            className="w-full bg-[#474973] text-white font-bold p-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md flex justify-center"
           >
-            {isLoading ? <Loader2 className="animate-spin mx-auto" /> : "S'inscrire"}
+            {isLoading ? <Loader2 className="animate-spin" /> : "S'inscrire"}
           </button>
         </form>
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Zap, ArrowRight, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { API_URL } from '../config';
 
 interface ConfigField {
   name: string;
@@ -32,8 +33,6 @@ interface Service {
   reactions: Reaction[];
 }
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export default function CreateAreaPage() {
   const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
@@ -50,7 +49,9 @@ export default function CreateAreaPage() {
   const [actionConfig, setActionConfig] = useState<Record<string, string | number | boolean>>({});
   const [selectedReactionService, setSelectedReactionService] = useState('');
   const [selectedReaction, setSelectedReaction] = useState('');
-  const [reactionConfig, setReactionConfig] = useState<Record<string, string | number | boolean>>({});
+  const [reactionConfig, setReactionConfig] = useState<Record<string, string | number | boolean>>(
+    {}
+  );
 
   useEffect(() => {
     fetchServices();

@@ -1,9 +1,23 @@
-const BASE_URL = '/api/auth';
+import { API_URL } from '../config';
+
+const BASE_URL = `${API_URL}/api/auth`;
 
 const getAuthHeader = (): Record<string, string> => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
+
+interface AuthResponse {
+  success: boolean;
+  user?: {
+    id: number;
+    email: string;
+    name: string;
+  };
+  sessionToken?: string;
+  accessToken?: string;
+  error?: string;
+}
 
 export const register = async (email: string, password: string, name: string) => {
   try {
@@ -13,10 +27,13 @@ export const register = async (email: string, password: string, name: string) =>
       body: JSON.stringify({ email, password, name }),
     });
     const data = await response.json();
-    if (!response.ok) return { success: false, error: data.error || 'Erreur inconnue' };
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Erreur inconnue' };
+    }
     return { success: true, data };
-  } catch {
-    return { success: false, error: 'Erreur serveur' };
+  } catch (err) {
+    return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };
 
@@ -28,10 +45,13 @@ export const login = async (email: string, password: string) => {
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
-    if (!response.ok) return { success: false, error: data.error || 'Erreur inconnue' };
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Erreur inconnue' };
+    }
     return { success: true, data };
-  } catch {
-    return { success: false, error: 'Erreur serveur' };
+  } catch (err) {
+    return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };
 
@@ -79,8 +99,7 @@ export interface Service {
 
 export const getServices = async () => {
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const response = await fetch(`${apiUrl}/about.json`);
+    const response = await fetch(`${API_URL}/about.json`);
     if (!response.ok) throw new Error('Network response was not ok');
 
     const data = await response.json();

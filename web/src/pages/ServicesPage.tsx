@@ -18,7 +18,7 @@ const SERVICES = [
     icon: Github,
     color: 'bg-gray-800 hover:bg-gray-900',
     description: 'Connectez votre compte GitHub pour automatiser vos workflows',
-    authUrl: 'http://localhost:8080/api/auth/github',
+    authUrl: 'http://localhost:3000/api/auth/github',
   },
   {
     id: 'discord',
@@ -26,7 +26,7 @@ const SERVICES = [
     icon: MessageCircle,
     color: 'bg-indigo-600 hover:bg-indigo-700',
     description: 'Connectez Discord pour recevoir des notifications',
-    authUrl: 'http://localhost:8080/api/auth/discord',
+    authUrl: 'http://localhost:3000/api/auth/discord',
   },
   {
     id: 'gmail',
@@ -34,7 +34,7 @@ const SERVICES = [
     icon: Mail,
     color: 'bg-red-600 hover:bg-red-700',
     description: 'Connectez Gmail pour gérer vos emails automatiquement',
-    authUrl: 'http://localhost:8080/api/auth/gmail',
+    authUrl: 'http://localhost:3000/api/auth/gmail',
   },
 ];
 
@@ -73,7 +73,7 @@ export default function ServicesPage() {
     }
 
     fetchConnectedServices();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConnectedServices = async () => {
@@ -84,7 +84,7 @@ export default function ServicesPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/user/oauth-accounts', {
+      const response = await fetch('http://localhost:3000/api/user/oauth-accounts', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -123,7 +123,7 @@ export default function ServicesPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/user/oauth/${provider}`, {
+      const response = await fetch(`http://localhost:3000/api/user/oauth/${provider}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,

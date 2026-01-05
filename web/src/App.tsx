@@ -4,7 +4,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AreasPage from './pages/AreasPage';
 import LoginSuccessPage from './pages/LoginSuccessPage';
-import DashboardPage from './pages/DashboardPage';
 import ServicesPage from './pages/ServicesPage';
 import CreateAreaPage from './pages/CreateAreaPage';
 
@@ -18,7 +17,6 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/areas" element={<AreasPage />} />
         <Route path="/areas/create" element={<CreateAreaPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/services" element={<ServicesPage />} />
       </Routes>
     </Router>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
+import { login } from '../services/api';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,273 +16,113 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const result = await login(email, password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+    if (result.success && result.data) {
+      const token = result.data.sessionToken || result.data.accessToken;
+      if (token) {
+        localStorage.setItem('token', token);
+        navigate('/services');
+      } else {
+        setError('Erreur: Aucun token reçu du serveur.');
       }
-
-      // Store token
-      localStorage.setItem('token', data.sessionToken || data.accessToken);
-
-      // Redirect to services page
-      navigate('/services');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error || 'Échec de la connexion');
     }
+
+    setLoading(false);
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${API_URL}/api/auth/gmail`;
-  };
-
-  const handleGithubLogin = () => {
-    window.location.href = `${API_URL}/api/auth/github`;
-  };
-
-  const handleDiscordLogin = () => {
-    window.location.href = `${API_URL}/api/auth/discord`;
+  const handleOAuthLogin = (provider: string) => {
+    window.location.href = `${API_URL}/api/auth/${provider}`;
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px',
-        backgroundColor: '#F1DAC4',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '450px',
-          width: '100%',
-          backgroundColor: 'white',
-          padding: '40px',
-          borderRadius: '16px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1
-            style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px', color: '#161B33' }}
-          >
-            Login
-          </h1>
-          <p style={{ color: '#A69CAC' }}>Sign in to your AREA account</p>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F1DAC4]">
+      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-xl border border-[#A69CAC]/30">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-[#161B33] mb-2">Connexion</h1>
+          <p className="text-[#A69CAC]">Connectez-vous à votre compte AREA</p>
         </div>
 
-        {/* Email/Password Form */}
-        <form onSubmit={handleEmailLogin} style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#161B33',
-              }}
-            >
-              Email
-            </label>
+        <form onSubmit={handleEmailLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-bold text-[#474973] mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="your@email.com"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #A69CAC',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = '#474973')}
-              onBlur={(e) => (e.target.style.borderColor = '#A69CAC')}
+              placeholder="exemple@email.com"
+              className="w-full p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#161B33',
-              }}
-            >
-              Password
-            </label>
+          <div>
+            <label className="block text-sm font-bold text-[#474973] mb-1">Mot de passe</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #A69CAC',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = '#474973')}
-              onBlur={(e) => (e.target.style.borderColor = '#A69CAC')}
+              className="w-full p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
             />
           </div>
 
           {error && (
-            <div
-              style={{
-                padding: '12px',
-                backgroundColor: '#fee2e2',
-                border: '1px solid #ef4444',
-                borderRadius: '8px',
-                marginBottom: '16px',
-              }}
-            >
-              <p style={{ color: '#dc2626', fontSize: '14px', margin: 0 }}>{error}</p>
+            <div className="bg-red-50 text-red-700 p-3 rounded flex items-center border border-red-200 text-sm">
+              <AlertCircle size={16} className="mr-2 flex-shrink-0" /> {error}
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#474973',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-            }}
+            className="w-full bg-[#474973] text-white font-bold p-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md flex justify-center items-center"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? <Loader2 className="animate-spin" /> : 'Se connecter'}
           </button>
         </form>
 
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
-          <span style={{ padding: '0 16px', color: '#A69CAC', fontSize: '14px' }}>
-            Or continue with
-          </span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#E5E7EB' }}></div>
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="px-4 text-sm text-[#A69CAC]">Ou continuer avec</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
         </div>
 
-        {/* OAuth Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="space-y-3">
           <button
-            onClick={handleGoogleLogin}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#4285f4',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            onClick={() => handleOAuthLogin('gmail')}
+            className="w-full p-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
           >
             <span>🔐</span> Google
           </button>
 
           <button
-            onClick={handleGithubLogin}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#24292e',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            onClick={() => handleOAuthLogin('github')}
+            className="w-full p-3 bg-[#24292e] text-white rounded-lg hover:opacity-90 transition-opacity font-medium flex items-center justify-center gap-2"
           >
             <span>🐙</span> GitHub
           </button>
 
           <button
-            onClick={handleDiscordLogin}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#5865f2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            onClick={() => handleOAuthLogin('discord')}
+            className="w-full p-3 bg-[#5865f2] text-white rounded-lg hover:opacity-90 transition-opacity font-medium flex items-center justify-center gap-2"
           >
             <span>💬</span> Discord
           </button>
         </div>
 
-        {/* Register Link */}
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <p style={{ color: '#A69CAC', fontSize: '14px', marginBottom: '8px' }}>
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              style={{ color: '#474973', textDecoration: 'none', fontWeight: '600' }}
-            >
-              Sign up
+        <div className="mt-8 text-center">
+          <p className="text-[#161B33] text-sm">
+            Pas encore de compte ?{' '}
+            <Link to="/register" className="font-bold text-[#474973] hover:underline">
+              S'inscrire
             </Link>
           </p>
-          <Link to="/" style={{ color: '#474973', textDecoration: 'none', fontSize: '14px' }}>
-            ← Back to home
+          <Link to="/" className="block mt-4 text-sm text-[#A69CAC] hover:text-[#474973]">
+            ← Retour à l'accueil
           </Link>
         </div>
       </div>

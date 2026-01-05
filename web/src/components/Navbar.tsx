@@ -67,10 +67,10 @@ export default function Navbar() {
             </Link>
             {user && (
               <Link
-                to="/dashboard"
+                to="/services"
                 className={`${colors.text} font-medium ${colors.hover} transition-opacity`}
               >
-                Tableau de bord
+                Services
               </Link>
             )}
           </div>
