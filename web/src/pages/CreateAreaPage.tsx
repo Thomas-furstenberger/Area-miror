@@ -46,12 +46,10 @@ export default function CreateAreaPage() {
   const [areaDescription, setAreaDescription] = useState('');
   const [selectedActionService, setSelectedActionService] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
-  const [actionConfig, setActionConfig] = useState<Record<string, string | number | boolean>>({});
+  const [actionConfig, setActionConfig] = useState<Record<string, any>>({});
   const [selectedReactionService, setSelectedReactionService] = useState('');
   const [selectedReaction, setSelectedReaction] = useState('');
-  const [reactionConfig, setReactionConfig] = useState<Record<string, string | number | boolean>>(
-    {}
-  );
+  const [reactionConfig, setReactionConfig] = useState<Record<string, any>>({});
 
   useEffect(() => {
     fetchServices();
@@ -82,6 +80,26 @@ export default function CreateAreaPage() {
         return;
       }
 
+      let finalActionConfig = { ...actionConfig };
+
+      if (selectedActionService === 'timer') {
+        if (selectedAction === 'time_reached' && typeof finalActionConfig.time === 'string') {
+          const [hourStr, minuteStr] = finalActionConfig.time.split(':');
+          finalActionConfig = {
+            ...finalActionConfig,
+            hour: parseInt(hourStr, 10),
+            minute: parseInt(minuteStr, 10),
+          };
+        }
+
+        if (selectedAction === 'day_of_week' && finalActionConfig.day) {
+          finalActionConfig = {
+            ...finalActionConfig,
+            dayOfWeek: parseInt(finalActionConfig.day, 10),
+          };
+        }
+      }
+
       const response = await fetch(`${API_URL}/api/areas`, {
         method: 'POST',
         headers: {
@@ -93,7 +111,7 @@ export default function CreateAreaPage() {
           description: areaDescription,
           actionService: selectedActionService,
           actionType: selectedAction,
-          actionConfig: actionConfig,
+          actionConfig: finalActionConfig,
           reactionService: selectedReactionService,
           reactionType: selectedReaction,
           reactionConfig: reactionConfig,

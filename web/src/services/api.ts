@@ -7,18 +7,6 @@ const getAuthHeader = (): Record<string, string> => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    id: number;
-    email: string;
-    name: string;
-  };
-  sessionToken?: string;
-  accessToken?: string;
-  error?: string;
-}
-
 export const register = async (email: string, password: string, name: string) => {
   try {
     const response = await fetch(`${BASE_URL}/register`, {
@@ -107,5 +95,35 @@ export const getServices = async () => {
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];
+  }
+};
+
+export const createArea = async (data: {
+  name: string;
+  description?: string;
+  actionService: string;
+  actionType: string;
+  actionConfig: any;
+  reactionService: string;
+  reactionType: string;
+  reactionConfig: any;
+}) => {
+  try {
+    const response = await fetch(`${API_URL}/api/areas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(data),
+    });
+
+    const resData = await response.json();
+    if (!response.ok) {
+      return { success: false, error: resData.error || 'Erreur lors de la création' };
+    }
+    return { success: true, area: resData.area };
+  } catch (err) {
+    return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };
