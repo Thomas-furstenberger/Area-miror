@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { Github, MessageCircle, Mail, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
+import {
+  Github,
+  MessageCircle,
+  Mail,
+  CheckCircle,
+  AlertCircle,
+  LogOut,
+  Plus,
+  Zap,
+  Link2,
+  Unlink,
+} from 'lucide-react';
 
 interface ConnectedService {
   provider: string;
@@ -16,23 +28,26 @@ const SERVICES = [
     id: 'github',
     name: 'GitHub',
     icon: Github,
-    color: 'bg-gray-800 hover:bg-gray-900',
-    description: 'Connectez votre compte GitHub pour automatiser vos workflows',
+    color: 'from-gray-700 to-gray-900',
+    bgColor: 'bg-gray-800',
+    description: 'Connectez votre compte GitHub pour automatiser vos workflows de développement',
     authUrl: 'http://localhost:3000/api/auth/github',
   },
   {
     id: 'discord',
     name: 'Discord',
     icon: MessageCircle,
-    color: 'bg-indigo-600 hover:bg-indigo-700',
-    description: 'Connectez Discord pour recevoir des notifications',
+    color: 'from-indigo-500 to-purple-600',
+    bgColor: 'bg-indigo-600',
+    description: 'Connectez Discord pour recevoir des notifications et automatiser vos serveurs',
     authUrl: 'http://localhost:3000/api/auth/discord',
   },
   {
     id: 'gmail',
     name: 'Gmail',
     icon: Mail,
-    color: 'bg-red-600 hover:bg-red-700',
+    color: 'from-red-500 to-orange-500',
+    bgColor: 'bg-red-500',
     description: 'Connectez Gmail pour gérer vos emails automatiquement',
     authUrl: 'http://localhost:3000/api/auth/gmail',
   },
@@ -165,151 +180,257 @@ export default function ServicesPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-text mb-4">Connectez vos services</h1>
-          <p className="text-lg text-secondary">
-            Connectez vos comptes pour créer des automatisations puissantes
-          </p>
+      <main className="flex-grow">
+        {/* Hero Header */}
+        <div className="bg-gradient-to-br from-primary via-primary/90 to-dark py-16 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+              transition={{ duration: 8, repeat: Infinity }}
+              className="absolute -top-20 -right-20 w-96 h-96 bg-white rounded-full blur-3xl"
+            />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', duration: 0.6 }}
+                className="inline-flex p-4 bg-white/10 rounded-2xl mb-6 backdrop-blur-sm"
+              >
+                <Link2 className="w-8 h-8 text-white" />
+              </motion.div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Connectez vos services
+              </h1>
+              <p className="text-xl text-white/70 max-w-2xl mx-auto">
+                Liez vos applications préférées pour débloquer des automatisations puissantes
+              </p>
+            </motion.div>
+          </div>
         </div>
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 flex-shrink-0" />
-            <p>{successMessage}</p>
-          </div>
-        )}
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+          {/* Success Message */}
+          <AnimatePresence>
+            {successMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 shadow-sm"
+              >
+                <div className="p-1 bg-green-100 rounded-full">
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <p className="font-medium">{successMessage}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
+          {/* Error Message */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 shadow-sm"
+              >
+                <div className="p-1 bg-red-100 rounded-full">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <p className="font-medium">{error}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* Loading State */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-secondary">Chargement...</p>
-          </div>
-        ) : (
-          <>
-            {/* Services Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              {SERVICES.map((service) => {
-                const Icon = service.icon;
-                const isConnected = isServiceConnected(service.id);
-                const connectedInfo = getConnectedService(service.id);
-
-                return (
-                  <div
-                    key={service.id}
-                    className="bg-white rounded-xl shadow-md p-6 border-2 border-transparent hover:border-primary transition-all duration-200"
-                  >
-                    {/* Service Icon & Name */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <div
-                        className={`${service.color} p-3 rounded-lg text-white transition-colors duration-200`}
-                      >
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div className="flex-grow">
-                        <h3 className="text-xl font-semibold text-text">{service.name}</h3>
-                        {isConnected && (
-                          <div className="flex items-center gap-1 text-green-600 text-sm mt-1">
-                            <CheckCircle className="w-4 h-4" />
-                            <span>Connecté</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-secondary text-sm mb-4">{service.description}</p>
-
-                    {/* Connected Info */}
-                    {isConnected && connectedInfo && (
-                      <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm">
-                        <p className="text-gray-700">
-                          {connectedInfo.email || connectedInfo.username || 'Compte connecté'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Action Button */}
-                    {isConnected ? (
-                      <button
-                        onClick={() => handleDisconnect(connectedInfo?.provider || service.id)}
-                        className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Déconnecter
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleConnect(service.authUrl)}
-                        className={`w-full px-4 py-2 ${service.color} text-white rounded-lg transition-colors duration-200 font-medium`}
-                      >
-                        Connecter
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+          {/* Loading State */}
+          {loading ? (
+            <div className="text-center py-20">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full mx-auto"
+              />
+              <p className="mt-4 text-secondary font-medium">Chargement de vos services...</p>
             </div>
+          ) : (
+            <>
+              {/* Services Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {SERVICES.map((service, index) => {
+                  const Icon = service.icon;
+                  const isConnected = isServiceConnected(service.id);
+                  const connectedInfo = getConnectedService(service.id);
 
-            {/* Connected Services Summary */}
-            {connectedServices.length > 0 && (
-              <div className="bg-white rounded-xl shadow-md p-6 mb-12">
-                <h2 className="text-2xl font-bold text-text mb-4">Services connectés</h2>
-                <div className="space-y-3">
-                  {connectedServices.map((service, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  return (
+                    <motion.div
+                      key={service.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ y: -5 }}
+                      className={`relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
+                        isConnected
+                          ? 'border-green-300'
+                          : 'border-transparent hover:border-primary/30'
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-text">{service.provider}</p>
-                          {service.email && (
-                            <p className="text-sm text-secondary">{service.email}</p>
-                          )}
+                      {/* Connected badge */}
+                      {isConnected && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Connecté
+                          </motion.div>
+                        </div>
+                      )}
+
+                      {/* Gradient header */}
+                      <div className={`h-24 bg-gradient-to-r ${service.color} relative`}>
+                        <div className="absolute inset-0 bg-black/10" />
+                        <div className="absolute bottom-0 left-6 transform translate-y-1/2">
+                          <div
+                            className={`w-16 h-16 ${service.bgColor} rounded-xl shadow-lg flex items-center justify-center`}
+                          >
+                            <Icon className="w-8 h-8 text-white" />
+                          </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDisconnect(service.provider)}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Déconnecter
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => navigate('/areas/create')}
-                className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-all duration-200 font-medium text-lg shadow-md"
+                      {/* Content */}
+                      <div className="pt-12 pb-6 px-6">
+                        <h3 className="text-xl font-bold text-text mb-2">{service.name}</h3>
+                        <p className="text-secondary text-sm mb-4 line-clamp-2">
+                          {service.description}
+                        </p>
+
+                        {/* Connected Info */}
+                        {isConnected && connectedInfo && (
+                          <div className="mb-4 p-3 bg-green-50 rounded-xl text-sm border border-green-100">
+                            <p className="text-green-700 font-medium truncate">
+                              {connectedInfo.email || connectedInfo.username || 'Compte connecté'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {isConnected ? (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleDisconnect(connectedInfo?.provider || service.id)}
+                            className="w-full px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center gap-2 font-semibold border border-red-100"
+                          >
+                            <Unlink className="w-4 h-4" />
+                            Déconnecter
+                          </motion.button>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleConnect(service.authUrl)}
+                            className={`w-full px-4 py-3 bg-gradient-to-r ${service.color} text-white rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2`}
+                          >
+                            <Link2 className="w-4 h-4" />
+                            Connecter
+                          </motion.button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Connected Services Summary */}
+              {connectedServices.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-2xl shadow-lg p-8 mb-12"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-green-100 rounded-xl">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-text">Services connectés</h2>
+                    <span className="ml-auto px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                      {connectedServices.length} actif{connectedServices.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {connectedServices.map((service, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-text">{service.provider}</p>
+                            {service.email && (
+                              <p className="text-sm text-secondary">{service.email}</p>
+                            )}
+                          </div>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleDisconnect(service.provider)}
+                          className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Déconnecter
+                        </motion.button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
               >
-                Créer une AREA
-              </button>
-              <button
-                onClick={() => navigate('/areas')}
-                className="px-8 py-3 bg-white text-primary border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-200 font-medium text-lg"
-              >
-                Voir mes AREAs
-              </button>
-            </div>
-          </>
-        )}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/areas/create')}
+                  className="px-8 py-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all duration-200 font-semibold text-lg shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Créer une AREA
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/areas')}
+                  className="px-8 py-4 bg-white text-primary border-2 border-primary rounded-xl hover:bg-primary hover:text-white transition-all duration-200 font-semibold text-lg flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-5 h-5" />
+                  Voir mes AREAs
+                </motion.button>
+              </motion.div>
+            </>
+          )}
+        </div>
       </main>
 
       <Footer />

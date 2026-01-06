@@ -29,3 +29,64 @@
     @apply text-link text-primary hover:opacity-80 transition-opacity;
   }
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1DAC4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #474973;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A69CAC;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background-color: #474973;
+  color: #F1DAC4;
+}
+
+/* Swiper custom styles */
+.swiper-pagination-bullet {
+  background: #474973 !important;
+  opacity: 0.3;
+}
+
+.swiper-pagination-bullet-active {
+  opacity: 1 !important;
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

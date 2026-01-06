@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  UserPlus,
+  Mail,
+  Lock,
+  User,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  Sparkles,
+  Check,
+} from 'lucide-react';
 import { register } from '../services/api';
 
 export default function RegisterPage() {
@@ -32,86 +43,248 @@ export default function RegisterPage() {
     }
   };
 
+  const benefits = [
+    'Accès à 500+ intégrations',
+    'Automatisations illimitées',
+    'Support prioritaire',
+    'Aucune carte bancaire requise',
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F1DAC4]">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-xl border border-[#A69CAC]/30">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-[#F1DAC4] rounded-full">
-              <UserPlus size={32} className="text-[#474973]" />
+    <div className="min-h-screen flex bg-background overflow-hidden">
+      {/* Left Panel - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md"
+        >
+          {/* Mobile logo */}
+          <Link to="/" className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-          </div>
-          <h1 className="text-3xl font-bold text-[#474973]">Inscription</h1>
-          <p className="text-[#A69CAC] mt-2 font-medium">Rejoins l'aventure AREA</p>
-        </div>
+            <span className="text-xl font-bold text-text">AREA</span>
+          </Link>
 
-        {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded mb-4 flex items-center border border-red-200 text-sm">
-            <AlertCircle size={20} className="mr-2 flex-shrink-0" /> {error}
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', duration: 0.6 }}
+              className="inline-flex p-4 bg-primary/10 rounded-2xl mb-4"
+            >
+              <UserPlus className="w-8 h-8 text-primary" />
+            </motion.div>
+            <h1 className="text-3xl font-bold text-text mb-2">Créer un compte</h1>
+            <p className="text-secondary">
+              Rejoignez des milliers d'utilisateurs qui automatisent leur quotidien
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-bold text-[#474973] mb-1">Nom</label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 text-[#A69CAC]" size={20} />
-              <input
-                type="text"
-                required
-                placeholder="Ton Nom"
-                className="w-full pl-10 p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-3 border border-red-100 mb-6"
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-text mb-2">Nom complet</label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+                <input
+                  type="text"
+                  required
+                  placeholder="John Doe"
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-secondary/30 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-text transition-all duration-200"
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#474973] mb-1">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 text-[#A69CAC]" size={20} />
-              <input
-                type="email"
-                required
-                placeholder="exemple@email.com"
-                className="w-full pl-10 p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+            <div>
+              <label className="block text-sm font-semibold text-text mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+                <input
+                  type="email"
+                  required
+                  placeholder="john@example.com"
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-secondary/30 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-text transition-all duration-200"
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-bold text-[#474973] mb-1">Mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 text-[#A69CAC]" size={20} />
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                className="w-full pl-10 p-3 border border-[#A69CAC] rounded-lg focus:ring-2 focus:ring-[#474973] focus:border-[#474973] outline-none text-[#161B33]"
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+            <div>
+              <label className="block text-sm font-semibold text-text mb-2">Mot de passe</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-secondary/30 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-text transition-all duration-200"
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-secondary mt-2">
+                Minimum 8 caractères avec une majuscule et un chiffre
+              </p>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-[#474973] text-white font-bold p-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 shadow-md flex justify-center"
-          >
-            {isLoading ? <Loader2 className="animate-spin" /> : "S'inscrire"}
-          </button>
-        </form>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary text-white font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 shadow-lg shadow-primary/25 flex justify-center items-center gap-2"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  Créer mon compte
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </motion.button>
 
-        <div className="mt-6 text-center">
-          <p className="text-[#161B33]">
-            Déjà un compte ?{' '}
-            <Link to="/login" className="font-bold text-[#474973] hover:underline">
-              Se connecter
+            <p className="text-xs text-center text-secondary">
+              En vous inscrivant, vous acceptez nos{' '}
+              <a href="#" className="text-primary hover:underline">
+                Conditions d'utilisation
+              </a>{' '}
+              et notre{' '}
+              <a href="#" className="text-primary hover:underline">
+                Politique de confidentialité
+              </a>
+            </p>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-text">
+              Déjà un compte ?{' '}
+              <Link to="/login" className="font-semibold text-primary hover:underline">
+                Se connecter
+              </Link>
+            </p>
+            <Link
+              to="/"
+              className="inline-block mt-4 text-sm text-secondary hover:text-primary transition-colors"
+            >
+              ← Retour à l'accueil
             </Link>
-          </p>
-        </div>
+          </div>
+        </motion.div>
       </div>
+
+      {/* Right Panel - Decorative */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-bl from-primary via-primary/90 to-dark relative"
+      >
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, -90, 0],
+            }}
+            transition={{ duration: 20, repeat: Infinity }}
+            className="absolute -top-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"
+          />
+          <motion.div
+            animate={{
+              scale: [1.2, 1, 1.2],
+              rotate: [-90, 0, -90],
+            }}
+            transition={{ duration: 25, repeat: Infinity }}
+            className="absolute -bottom-40 -left-20 w-96 h-96 bg-secondary/20 rounded-full blur-3xl"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Link to="/" className="flex items-center gap-3 mb-12">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <span className="text-2xl font-bold">AREA</span>
+            </Link>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-4xl font-bold mb-6"
+          >
+            Commencez gratuitement
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="text-xl text-white/70 mb-12"
+          >
+            Créez votre compte en quelques secondes et découvrez la puissance de l'automatisation.
+          </motion.p>
+
+          {/* Benefits list */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="space-y-4"
+          >
+            {benefits.map((benefit, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + i * 0.1 }}
+                className="flex items-center gap-3"
+              >
+                <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-green-400" />
+                </div>
+                <span className="text-white/80">{benefit}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Trust badges */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-16 pt-8 border-t border-white/10"
+          >
+            <p className="text-white/50 text-sm mb-4">Ils nous font confiance</p>
+            <div className="flex items-center gap-6 opacity-50">
+              <div className="text-2xl font-bold">GitHub</div>
+              <div className="text-2xl font-bold">Discord</div>
+              <div className="text-2xl font-bold">Gmail</div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   );
 }

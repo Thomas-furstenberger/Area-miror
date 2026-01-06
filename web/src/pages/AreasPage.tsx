@@ -1,8 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../config';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import {
+  Plus,
+  Zap,
+  Play,
+  Pause,
+  Trash2,
+  ArrowRight,
+  Clock,
+  Github,
+  Mail,
+  MessageCircle,
+  Sparkles,
+  Activity,
+  MoreVertical,
+} from 'lucide-react';
 
 interface Area {
   id: string;
@@ -16,27 +32,25 @@ interface Area {
   createdAt: string;
 }
 
+const serviceIcons: Record<string, React.ElementType> = {
+  gmail: Mail,
+  github: Github,
+  discord: MessageCircle,
+  timer: Clock,
+};
+
+const serviceColors: Record<string, string> = {
+  gmail: 'from-red-500 to-orange-500',
+  github: 'from-gray-700 to-gray-900',
+  discord: 'from-indigo-500 to-purple-600',
+  timer: 'from-blue-500 to-cyan-500',
+};
+
 export default function AreasPage() {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    actionService: 'gmail',
-    actionType: 'email_received',
-    reactionService: 'discord',
-    reactionType: 'send_message',
-    webhookUrl: '',
-    message: '',
-    // Timer config fields
-    timerHour: '12',
-    timerMinute: '0',
-    timerDate: '',
-    timerDayOfWeek: '1',
-  });
+  const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAreas();
@@ -44,7 +58,10 @@ export default function AreasPage() {
 
   const fetchAreas = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      navigate('/login');
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/areas`, {
@@ -59,83 +76,6 @@ export default function AreasPage() {
       }
     } catch (error) {
       console.error('Error fetching areas:', error);
-    }
-  };
-
-  const createArea = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Please login first');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Build actionConfig based on service and type
-      let actionConfig = {};
-      if (formData.actionService === 'timer') {
-        if (formData.actionType === 'time_reached') {
-          actionConfig = {
-            hour: parseInt(formData.timerHour),
-            minute: parseInt(formData.timerMinute),
-          };
-        } else if (formData.actionType === 'date_reached') {
-          actionConfig = { date: formData.timerDate };
-        } else if (formData.actionType === 'day_of_week') {
-          actionConfig = { dayOfWeek: parseInt(formData.timerDayOfWeek) };
-        }
-      }
-
-      const response = await fetch(`${API_URL}/api/areas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          actionService: formData.actionService,
-          actionType: formData.actionType,
-          actionConfig,
-          reactionService: formData.reactionService,
-          reactionType: formData.reactionType,
-          reactionConfig: {
-            webhookUrl: formData.webhookUrl,
-            message: formData.message,
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('AREA created successfully!');
-        setShowForm(false);
-        setFormData({
-          name: '',
-          description: '',
-          actionService: 'gmail',
-          actionType: 'email_received',
-          reactionService: 'discord',
-          reactionType: 'send_message',
-          webhookUrl: '',
-          message: '',
-          timerHour: '12',
-          timerMinute: '0',
-          timerDate: '',
-          timerDayOfWeek: '1',
-        });
-        fetchAreas();
-      } else {
-        alert('Error: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Error creating area:', error);
-      alert('Failed to create AREA');
     } finally {
       setLoading(false);
     }
@@ -163,7 +103,7 @@ export default function AreasPage() {
   };
 
   const deleteArea = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this AREA?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette AREA ?')) return;
 
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -185,477 +125,268 @@ export default function AreasPage() {
     }
   };
 
+  const getServiceIcon = (service: string) => {
+    return serviceIcons[service] || Zap;
+  };
+
+  const getServiceColor = (service: string) => {
+    return serviceColors[service] || 'from-gray-500 to-gray-700';
+  };
+
   return (
-    <div>
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div style={{ padding: '40px', maxWidth: '1200px', minHeight: '70vh', margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '30px',
-          }}
-        >
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold' }}>My AREAs</h1>
-          <button
-            onClick={() => navigate('/areas/create')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#474973',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            + Créer une AREA
-          </button>
+
+      <main className="flex-grow">
+        {/* Hero Header */}
+        <div className="bg-gradient-to-br from-primary via-primary/90 to-dark py-16 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+              transition={{ duration: 8, repeat: Infinity }}
+              className="absolute -top-20 -right-20 w-96 h-96 bg-white rounded-full blur-3xl"
+            />
+            <motion.div
+              animate={{ scale: [1.2, 1, 1.2], opacity: [0.05, 0.1, 0.05] }}
+              transition={{ duration: 10, repeat: Infinity }}
+              className="absolute -bottom-20 -left-20 w-80 h-80 bg-secondary rounded-full blur-3xl"
+            />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', duration: 0.6 }}
+                    className="p-3 bg-white/10 rounded-xl backdrop-blur-sm"
+                  >
+                    <Activity className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm font-medium backdrop-blur-sm">
+                    {areas.length} AREA{areas.length !== 1 ? 's' : ''} actif
+                    {areas.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+                  Mes automatisations
+                </h1>
+                <p className="text-xl text-white/70">
+                  Gérez et surveillez vos workflows automatisés
+                </p>
+              </motion.div>
+
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/areas/create')}
+                className="px-6 py-4 bg-white text-primary rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 self-start md:self-auto"
+              >
+                <Plus className="w-5 h-5" />
+                Créer une AREA
+              </motion.button>
+            </div>
+          </div>
         </div>
 
-        {showForm && (
-          <div
-            style={{
-              backgroundColor: '#f9fafb',
-              padding: '30px',
-              borderRadius: '12px',
-              marginBottom: '30px',
-            }}
-          >
-            <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>Create New AREA</h2>
-            <form onSubmit={createArea}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  placeholder="My Gmail to Discord automation"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="When I receive an email, send a Discord message"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '20px',
-                  marginBottom: '20px',
-                }}
-              >
-                <div>
-                  <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#6366f1' }}>
-                    IF (Action)
-                  </h3>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                      Service
-                    </label>
-                    <select
-                      value={formData.actionService}
-                      onChange={(e) => setFormData({ ...formData, actionService: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      <option value="gmail">Gmail</option>
-                      <option value="timer">Timer</option>
-                      <option value="github">GitHub</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                      Action Type
-                    </label>
-                    <select
-                      value={formData.actionType}
-                      onChange={(e) => setFormData({ ...formData, actionType: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      {formData.actionService === 'gmail' && (
-                        <>
-                          <option value="email_received">Email Received</option>
-                          <option value="email_with_attachment">Email with Attachment</option>
-                        </>
-                      )}
-                      {formData.actionService === 'timer' && (
-                        <>
-                          <option value="time_reached">Time Reached</option>
-                          <option value="date_reached">Date Reached</option>
-                          <option value="day_of_week">Day of Week</option>
-                        </>
-                      )}
-                      {formData.actionService === 'github' && (
-                        <>
-                          <option value="issue_created">Issue Created</option>
-                          <option value="pull_request_opened">Pull Request Opened</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 style={{ fontSize: '18px', marginBottom: '12px', color: '#10b981' }}>
-                    THEN (Reaction)
-                  </h3>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                      Service
-                    </label>
-                    <select
-                      value={formData.reactionService}
-                      onChange={(e) =>
-                        setFormData({ ...formData, reactionService: e.target.value })
-                      }
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      <option value="discord">Discord</option>
-                      <option value="gmail">Gmail</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                      Reaction Type
-                    </label>
-                    <select
-                      value={formData.reactionType}
-                      onChange={(e) => setFormData({ ...formData, reactionType: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      <option value="send_message">Send Message</option>
-                      <option value="send_email">Send Email</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {formData.actionService === 'timer' && (
-                <div
-                  style={{
-                    marginBottom: '20px',
-                    padding: '20px',
-                    backgroundColor: 'white',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#6366f1' }}>
-                    Action Configuration
-                  </h3>
-
-                  {formData.actionType === 'time_reached' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                          Hour (0-23) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="23"
-                          value={formData.timerHour}
-                          onChange={(e) => setFormData({ ...formData, timerHour: e.target.value })}
-                          required
-                          style={{
-                            width: '100%',
-                            padding: '10px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '6px',
-                            fontSize: '14px',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                          Minute (0-59) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="59"
-                          value={formData.timerMinute}
-                          onChange={(e) =>
-                            setFormData({ ...formData, timerMinute: e.target.value })
-                          }
-                          required
-                          style={{
-                            width: '100%',
-                            padding: '10px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '6px',
-                            fontSize: '14px',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.actionType === 'date_reached' && (
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                        Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.timerDate}
-                        onChange={(e) => setFormData({ ...formData, timerDate: e.target.value })}
-                        required
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {formData.actionType === 'day_of_week' && (
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                        Day of Week *
-                      </label>
-                      <select
-                        value={formData.timerDayOfWeek}
-                        onChange={(e) =>
-                          setFormData({ ...formData, timerDayOfWeek: e.target.value })
-                        }
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                        }}
-                      >
-                        <option value="0">Sunday</option>
-                        <option value="1">Monday</option>
-                        <option value="2">Tuesday</option>
-                        <option value="3">Wednesday</option>
-                        <option value="4">Thursday</option>
-                        <option value="5">Friday</option>
-                        <option value="6">Saturday</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div
-                style={{
-                  marginBottom: '20px',
-                  padding: '20px',
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                }}
-              >
-                <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Reaction Configuration</h3>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                    Discord Webhook URL *
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.webhookUrl}
-                    onChange={(e) => setFormData({ ...formData, webhookUrl: e.target.value })}
-                    required
-                    placeholder="https://discord.com/api/webhooks/..."
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                    Message
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="New email received!"
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                    }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: loading ? '#9ca3af' : '#6366f1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  width: '100%',
-                }}
-              >
-                {loading ? 'Creating...' : 'Create AREA'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gap: '20px' }}>
-          {areas.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#6b7280' }}>
-              <p style={{ fontSize: '18px' }}>No AREAs yet. Create your first automation!</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {loading ? (
+            <div className="text-center py-20">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full mx-auto"
+              />
+              <p className="mt-4 text-secondary font-medium">
+                Chargement de vos automatisations...
+              </p>
             </div>
-          ) : (
-            areas.map((area) => (
-              <div
-                key={area.id}
-                style={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+          ) : areas.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-20"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', duration: 0.6 }}
+                className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6"
               >
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <h3 style={{ fontSize: '20px', fontWeight: '600' }}>{area.name}</h3>
-                    <span
-                      style={{
-                        padding: '4px 12px',
-                        backgroundColor: area.active ? '#d1fae5' : '#fee2e2',
-                        color: area.active ? '#065f46' : '#991b1b',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                      }}
+                <Sparkles className="w-12 h-12 text-primary" />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-text mb-3">Aucune automatisation</h2>
+              <p className="text-secondary mb-8 max-w-md mx-auto">
+                Créez votre première AREA pour commencer à automatiser vos tâches répétitives
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/areas/create')}
+                className="px-8 py-4 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/25 flex items-center gap-2 mx-auto"
+              >
+                <Plus className="w-5 h-5" />
+                Créer ma première AREA
+              </motion.button>
+            </motion.div>
+          ) : (
+            <div className="grid gap-6">
+              <AnimatePresence>
+                {areas.map((area, index) => {
+                  const ActionIcon = getServiceIcon(area.actionService);
+                  const ReactionIcon = getServiceIcon(area.reactionService);
+
+                  return (
+                    <motion.div
+                      key={area.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
+                        area.active ? 'border-green-200' : 'border-transparent'
+                      }`}
                     >
-                      {area.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  {area.description && (
-                    <p style={{ color: '#6b7280', marginBottom: '12px' }}>{area.description}</p>
-                  )}
-                  <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#4b5563' }}>
-                    <div>
-                      <span style={{ fontWeight: '600', color: '#6366f1' }}>IF:</span>{' '}
-                      {area.actionService} - {area.actionType}
-                    </div>
-                    <div>
-                      <span style={{ fontWeight: '600', color: '#10b981' }}>THEN:</span>{' '}
-                      {area.reactionService} - {area.reactionType}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => toggleArea(area.id)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: area.active ? '#fbbf24' : '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {area.active ? 'Pause' : 'Activate'}
-                  </button>
-                  <button
-                    onClick={() => deleteArea(area.id)}
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
+                      <div className="p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                          {/* Area Info */}
+                          <div className="flex-grow">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="text-xl font-bold text-text">{area.name}</h3>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  area.active
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {area.active ? '● Actif' : '○ Inactif'}
+                              </span>
+                            </div>
+                            {area.description && (
+                              <p className="text-secondary mb-4 line-clamp-2">{area.description}</p>
+                            )}
+
+                            {/* Flow visualization */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {/* Action */}
+                              <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-xl">
+                                <div
+                                  className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getServiceColor(area.actionService)} flex items-center justify-center`}
+                                >
+                                  <ActionIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-indigo-600 font-medium">SI</p>
+                                  <p className="text-sm font-semibold text-text capitalize">
+                                    {area.actionService}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <ArrowRight className="w-5 h-5 text-secondary" />
+
+                              {/* Reaction */}
+                              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl">
+                                <div
+                                  className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getServiceColor(area.reactionService)} flex items-center justify-center`}
+                                >
+                                  <ReactionIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-green-600 font-medium">ALORS</p>
+                                  <p className="text-sm font-semibold text-text capitalize">
+                                    {area.reactionService}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-3">
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => toggleArea(area.id)}
+                              className={`px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all ${
+                                area.active
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              }`}
+                            >
+                              {area.active ? (
+                                <>
+                                  <Pause className="w-4 h-4" />
+                                  Pause
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-4 h-4" />
+                                  Activer
+                                </>
+                              )}
+                            </motion.button>
+
+                            <div className="relative">
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() =>
+                                  setActiveMenu(activeMenu === area.id ? null : area.id)
+                                }
+                                className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                <MoreVertical className="w-5 h-5 text-gray-600" />
+                              </motion.button>
+
+                              <AnimatePresence>
+                                {activeMenu === area.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                    className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-10"
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        deleteArea(area.id);
+                                        setActiveMenu(null);
+                                      }}
+                                      className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Supprimer
+                                    </button>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Activity indicator bar */}
+                      {area.active && (
+                        <motion.div
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          className="h-1 bg-gradient-to-r from-green-400 to-emerald-500 origin-left"
+                        />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           )}
         </div>
-      </div>
+      </main>
+
       <Footer />
     </div>
   );

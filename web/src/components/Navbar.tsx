@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, User as UserIcon, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LogOut, User as UserIcon, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { me, logout } from '../services/api';
 
 interface User {
@@ -15,6 +16,16 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,41 +49,45 @@ export default function Navbar() {
     navigate('/');
   };
 
-  // Couleurs de la charte
-  const colors = {
-    bg: 'bg-[#F1DAC4]',
-    text: 'text-[#474973]',
-    border: 'border-[#A69CAC]',
-    hover: 'hover:opacity-80',
-    buttonBg: 'bg-[#474973]',
-    buttonText: 'text-white',
-  };
-
   return (
-    <nav className={`${colors.bg} border-b ${colors.border} sticky top-0 z-50`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-background/80 backdrop-blur-xl shadow-lg shadow-primary/5 border-b border-primary/10'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link to="/" className={`text-2xl font-bold ${colors.text} ${colors.hover}`}>
-            AREA
+          <Link to="/" className="flex items-center gap-3 group">
+            <motion.div
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.5 }}
+              className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25"
+            >
+              <span className="text-background font-bold text-xl">A</span>
+            </motion.div>
+            <span className="text-2xl font-bold text-text group-hover:text-primary transition-colors">
+              AREA
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link
-              to="/"
-              className={`${colors.text} font-medium ${colors.hover} transition-opacity`}
-            >
-              Accueil
-            </Link>
-            {user && (
-              <Link
-                to="/services"
-                className={`${colors.text} font-medium ${colors.hover} transition-opacity`}
+          <div className="hidden md:flex items-center gap-1">
+            {['Produit', 'Intégrations', 'Tarifs', 'Ressources'].map((item) => (
+              <motion.button
+                key={item}
+                whileHover={{ scale: 1.05 }}
+                className="px-4 py-2 text-text/80 hover:text-primary font-medium transition-colors rounded-lg hover:bg-primary/5 flex items-center gap-1"
               >
-                Services
-              </Link>
-            )}
+                {item}
+                <ChevronDown className="w-4 h-4" />
+              </motion.button>
+            ))}
           </div>
 
           {/* Desktop Auth Buttons / User Profile */}
@@ -80,16 +95,13 @@ export default function Navbar() {
             {!loading &&
               (user ? (
                 // MODE CONNECTÉ
-                <div className="flex items-center gap-4">
-                  <div className={`flex items-center gap-3 pl-4 border-l ${colors.border}`}>
-                    <div className="flex flex-col items-end">
-                      <span className={`text-sm font-semibold ${colors.text}`}>{user.name}</span>
-                      <span className="text-xs text-[#161B33]">{user.email}</span>
-                    </div>
-                    {/* Avatar */}
-                    <div
-                      className={`h-10 w-10 rounded-full bg-white flex items-center justify-center overflow-hidden border ${colors.border}`}
-                    >
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/50 backdrop-blur-sm border border-primary/10 hover:border-primary/30 transition-all"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden">
                       {user.avatarUrl ? (
                         <img
                           src={user.avatarUrl}
@@ -97,108 +109,176 @@ export default function Navbar() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <UserIcon className={colors.text} size={20} />
+                        <span className="text-background font-semibold text-sm">
+                          {user.name?.charAt(0).toUpperCase()}
+                        </span>
                       )}
                     </div>
-                  </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-semibold text-text">{user.name}</span>
+                      <span className="text-xs text-text/50">{user.email}</span>
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-text/50 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                    />
+                  </motion.button>
 
-                  <button
-                    onClick={handleLogout}
-                    className={`p-2 ${colors.text} hover:text-red-500 transition-colors`}
-                    title="Se déconnecter"
-                  >
-                    <LogOut size={20} />
-                  </button>
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+                      >
+                        <Link
+                          to="/areas"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                        >
+                          <LayoutDashboard className="w-5 h-5 text-primary" />
+                          <span className="text-text font-medium">Mes Areas</span>
+                        </Link>
+                        <Link
+                          to="/services"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                        >
+                          <UserIcon className="w-5 h-5 text-primary" />
+                          <span className="text-text font-medium">Services</span>
+                        </Link>
+                        <div className="border-t border-gray-100" />
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setDropdownOpen(false);
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 w-full hover:bg-red-50 transition-colors text-red-500"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span className="font-medium">Déconnexion</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 // MODE VISITEUR
                 <>
-                  <Link
-                    to="/login"
-                    className={`px-6 py-2 ${colors.text} font-bold border-2 border-[#474973] rounded-lg hover:bg-[#474973] hover:text-white transition-all`}
-                  >
-                    Connexion
+                  <Link to="/login">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-2.5 text-text font-semibold hover:text-primary transition-colors"
+                    >
+                      Connexion
+                    </motion.button>
                   </Link>
-                  <Link
-                    to="/register"
-                    className={`px-6 py-2 ${colors.buttonBg} ${colors.buttonText} rounded-lg ${colors.hover} transition-opacity font-bold shadow-md`}
-                  >
-                    Inscription
+                  <Link to="/register">
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(71, 73, 115, 0.3)' }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-2.5 bg-primary text-background rounded-xl font-semibold shadow-lg shadow-primary/25 transition-all"
+                    >
+                      Démarrer gratuitement
+                    </motion.button>
                   </Link>
                 </>
               ))}
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`md:hidden p-2 ${colors.text}`}
+            className="md:hidden p-2 text-text rounded-lg hover:bg-primary/10 transition-colors"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          </motion.button>
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className={`md:hidden py-4 space-y-4 border-t ${colors.border}`}>
-            <Link
-              to="/"
-              className={`block px-4 py-2 ${colors.text} font-medium hover:bg-white/20 rounded-lg`}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden overflow-hidden"
             >
-              Accueil
-            </Link>
-
-            {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center px-4 py-2 ${colors.text} font-medium hover:bg-white/20 rounded-lg`}
-                >
-                  <LayoutDashboard size={18} className="mr-2" /> Tableau de bord
-                </Link>
-                <div className={`border-t ${colors.border} my-2 pt-2`}>
-                  <div className="flex items-center px-4 py-2 mb-2">
-                    <div
-                      className={`h-8 w-8 rounded-full bg-white flex items-center justify-center mr-3 border ${colors.border}`}
-                    >
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} className="h-8 w-8 rounded-full" />
-                      ) : (
-                        <UserIcon size={16} className={colors.text} />
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className={`font-medium text-sm ${colors.text}`}>{user.name}</span>
-                      <span className="text-xs text-[#161B33]">{user.email}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg"
+              <div className="py-6 space-y-2 border-t border-primary/10">
+                {['Produit', 'Intégrations', 'Tarifs', 'Ressources'].map((item, i) => (
+                  <motion.a
+                    key={item}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    href="#"
+                    className="block px-4 py-3 text-text font-medium hover:bg-primary/5 rounded-xl transition-colors"
                   >
-                    <LogOut size={18} className="mr-2" /> Déconnexion
-                  </button>
+                    {item}
+                  </motion.a>
+                ))}
+
+                <div className="pt-4 border-t border-primary/10 mt-4">
+                  {user ? (
+                    <>
+                      <div className="flex items-center gap-3 px-4 py-3 mb-2">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                          {user.avatarUrl ? (
+                            <img src={user.avatarUrl} className="h-10 w-10 rounded-full" />
+                          ) : (
+                            <span className="text-background font-semibold">
+                              {user.name?.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text">{user.name}</p>
+                          <p className="text-sm text-text/50">{user.email}</p>
+                        </div>
+                      </div>
+                      <Link
+                        to="/areas"
+                        className="flex items-center gap-3 px-4 py-3 text-text font-medium hover:bg-primary/5 rounded-xl"
+                      >
+                        <LayoutDashboard size={18} /> Mes Areas
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-3 w-full text-red-500 hover:bg-red-50 rounded-xl"
+                      >
+                        <LogOut size={18} /> Déconnexion
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3 px-4">
+                      <Link to="/login">
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          className="w-full py-3 text-text font-semibold border-2 border-primary rounded-xl hover:bg-primary hover:text-background transition-all"
+                        >
+                          Connexion
+                        </motion.button>
+                      </Link>
+                      <Link to="/register">
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          className="w-full py-3 bg-primary text-background font-semibold rounded-xl shadow-lg"
+                        >
+                          Démarrer gratuitement
+                        </motion.button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
-              </>
-            ) : (
-              <div className="flex flex-col gap-3 px-4 pt-2">
-                <Link
-                  to="/login"
-                  className={`text-center py-2 ${colors.text} font-bold border-2 border-[#474973] rounded-lg`}
-                >
-                  Connexion
-                </Link>
-                <Link
-                  to="/register"
-                  className={`text-center py-2 ${colors.buttonBg} ${colors.buttonText} font-bold rounded-lg shadow-sm`}
-                >
-                  Inscription
-                </Link>
               </div>
-            )}
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
