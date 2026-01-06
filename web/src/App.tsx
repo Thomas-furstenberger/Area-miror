@@ -6,6 +6,9 @@ import AreasPage from './pages/AreasPage';
 import LoginSuccessPage from './pages/LoginSuccessPage';
 import ServicesPage from './pages/ServicesPage';
 import CreateAreaPage from './pages/CreateAreaPage';
+import PricingPage from './pages/PricingPage';
+import ResourcesPage from './pages/ResourcesPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
         <Route path="/areas" element={<AreasPage />} />
         <Route path="/areas/create" element={<CreateAreaPage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/resources" element={<ResourcesPage />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
       </Routes>
     </Router>
   );

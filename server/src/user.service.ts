@@ -205,6 +205,9 @@ export class UserService {
           accessToken: userData.accessToken,
           refreshToken: userData.refreshToken,
           expiresAt: userData.expiresAt,
+          email: userData.email,
+          name: userData.name,
+          avatarUrl: userData.avatarUrl,
         },
       });
     }
@@ -217,6 +220,9 @@ export class UserService {
         accessToken: userData.accessToken,
         refreshToken: userData.refreshToken,
         expiresAt: userData.expiresAt,
+        email: userData.email,
+        name: userData.name,
+        avatarUrl: userData.avatarUrl,
         userId,
       },
     });

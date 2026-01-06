@@ -606,6 +606,9 @@ fastify.get('/api/user/oauth-accounts', async (request, _reply) => {
       select: {
         id: true,
         provider: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
         createdAt: true,
       },
     });

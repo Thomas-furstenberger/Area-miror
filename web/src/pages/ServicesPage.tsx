@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { API_URL } from '../config';
 import {
   Github,
   MessageCircle,
@@ -19,7 +20,8 @@ import {
 interface ConnectedService {
   provider: string;
   email?: string;
-  username?: string;
+  name?: string;
+  avatarUrl?: string;
   connectedAt: Date;
 }
 
@@ -31,7 +33,7 @@ const SERVICES = [
     color: 'from-gray-700 to-gray-900',
     bgColor: 'bg-gray-800',
     description: 'Connectez votre compte GitHub pour automatiser vos workflows de développement',
-    authUrl: 'http://localhost:3000/api/auth/github',
+    authUrl: `${API_URL}/api/auth/github`,
   },
   {
     id: 'discord',
@@ -40,7 +42,7 @@ const SERVICES = [
     color: 'from-indigo-500 to-purple-600',
     bgColor: 'bg-indigo-600',
     description: 'Connectez Discord pour recevoir des notifications et automatiser vos serveurs',
-    authUrl: 'http://localhost:3000/api/auth/discord',
+    authUrl: `${API_URL}/api/auth/discord`,
   },
   {
     id: 'gmail',
@@ -49,7 +51,7 @@ const SERVICES = [
     color: 'from-red-500 to-orange-500',
     bgColor: 'bg-red-500',
     description: 'Connectez Gmail pour gérer vos emails automatiquement',
-    authUrl: 'http://localhost:3000/api/auth/gmail',
+    authUrl: `${API_URL}/api/auth/gmail`,
   },
 ];
 
@@ -99,7 +101,7 @@ export default function ServicesPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:3000/api/user/oauth-accounts', {
+      const response = await fetch(`${API_URL}/api/user/oauth-accounts`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -125,9 +127,12 @@ export default function ServicesPage() {
       return;
     }
 
-    // Redirect to OAuth with token as query param
-    // The backend will pass it as state to OAuth provider
-    window.location.href = `${authUrl}?token=${encodeURIComponent(token)}`;
+    // Pass state as JSON with token and redirect URL
+    const state = JSON.stringify({
+      userToken: token,
+      redirect: `${window.location.origin}/services`,
+    });
+    window.location.href = `${authUrl}?state=${encodeURIComponent(state)}`;
   };
 
   const handleDisconnect = async (provider: string) => {
@@ -138,7 +143,7 @@ export default function ServicesPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/api/user/oauth/${provider}`, {
+      const response = await fetch(`${API_URL}/api/user/oauth/${provider}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -318,7 +323,7 @@ export default function ServicesPage() {
                         {isConnected && connectedInfo && (
                           <div className="mb-4 p-3 bg-green-50 rounded-xl text-sm border border-green-100">
                             <p className="text-green-700 font-medium truncate">
-                              {connectedInfo.email || connectedInfo.username || 'Compte connecté'}
+                              {connectedInfo.name || connectedInfo.email || 'Compte connecté'}
                             </p>
                           </div>
                         )}

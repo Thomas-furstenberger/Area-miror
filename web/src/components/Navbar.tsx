@@ -78,15 +78,19 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            {['Produit', 'Intégrations', 'Tarifs', 'Ressources'].map((item) => (
-              <motion.button
-                key={item}
-                whileHover={{ scale: 1.05 }}
-                className="px-4 py-2 text-text/80 hover:text-primary font-medium transition-colors rounded-lg hover:bg-primary/5 flex items-center gap-1"
+            {[
+              { name: 'Produit', href: '/#features' },
+              { name: 'Intégrations', href: '/integrations' },
+              { name: 'Tarifs', href: '/pricing' },
+              { name: 'Ressources', href: '/resources' },
+            ].map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="px-4 py-2 text-text/80 hover:text-primary font-medium transition-colors rounded-lg hover:bg-primary/5"
               >
-                {item}
-                <ChevronDown className="w-4 h-4" />
-              </motion.button>
+                {item.name}
+              </Link>
             ))}
           </div>
 
@@ -209,17 +213,26 @@ export default function Navbar() {
               className="md:hidden overflow-hidden"
             >
               <div className="py-6 space-y-2 border-t border-primary/10">
-                {['Produit', 'Intégrations', 'Tarifs', 'Ressources'].map((item, i) => (
-                  <motion.a
-                    key={item}
+                {[
+                  { name: 'Produit', href: '/#features' },
+                  { name: 'Intégrations', href: '/integrations' },
+                  { name: 'Tarifs', href: '/pricing' },
+                  { name: 'Ressources', href: '/resources' },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.name}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    href="#"
-                    className="block px-4 py-3 text-text font-medium hover:bg-primary/5 rounded-xl transition-colors"
                   >
-                    {item}
-                  </motion.a>
+                    <Link
+                      to={item.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block px-4 py-3 text-text font-medium hover:bg-primary/5 rounded-xl transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  </motion.div>
                 ))}
 
                 <div className="pt-4 border-t border-primary/10 mt-4">

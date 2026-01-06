@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 
 const integrations = [
@@ -31,11 +32,16 @@ const integrations = [
     name: 'Gmail',
     description: 'Automatisez vos emails et répondez plus rapidement',
     icon: (
-      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
+      <svg
+        className="w-8 h-8"
+        viewBox="0 0 24 24"
+        fill="#EA4335"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
       </svg>
     ),
-    color: 'bg-gradient-to-br from-red-500 to-yellow-500',
+    color: 'bg-white border border-gray-200',
     features: ['Email triggers', 'Auto-responses', 'Label management'],
     category: 'Email',
   },
@@ -80,6 +86,7 @@ const integrations = [
 const categories = ['Tous', 'DevOps', 'Communication', 'Email', 'Productivity', 'Finance'];
 
 export default function IntegrationShowcase() {
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [hoveredIntegration, setHoveredIntegration] = useState<string | null>(null);
 
@@ -213,13 +220,20 @@ export default function IntegrationShowcase() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: hoveredIntegration === integration.name ? 1 : 0 }}
-                  className="absolute inset-0 bg-gradient-to-t from-primary/90 to-primary/70 rounded-3xl flex items-end justify-center p-8 pointer-events-none"
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl flex items-center justify-center pointer-events-none"
                 >
-                  <div className="text-center text-background">
-                    <p className="font-semibold mb-4">Prêt à connecter {integration.name} ?</p>
+                  <div className="text-center">
+                    <div
+                      className={`w-16 h-16 ${integration.color} rounded-2xl flex items-center justify-center text-white mb-4 mx-auto shadow-lg`}
+                    >
+                      {integration.icon}
+                    </div>
+                    <p className="font-bold text-text text-lg mb-2">{integration.name}</p>
+                    <p className="text-text/60 text-sm mb-4">Prêt à connecter ?</p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-background text-primary rounded-xl font-semibold pointer-events-auto"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold pointer-events-auto text-sm hover:bg-primary/90 transition-colors shadow-lg"
                     >
                       Configurer
                       <ExternalLink className="w-4 h-4" />
@@ -241,6 +255,7 @@ export default function IntegrationShowcase() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/services')}
             className="group inline-flex items-center gap-3 px-8 py-4 bg-primary/10 text-primary rounded-2xl font-semibold hover:bg-primary hover:text-background transition-all duration-300"
           >
             Voir toutes les intégrations
