@@ -8,23 +8,23 @@
   body {
     @apply font-sans bg-background text-text antialiased;
   }
-  
+
   h1 {
     @apply text-h1 text-primary;
   }
-  
+
   h2 {
     @apply text-h2 text-secondary;
   }
-  
+
   h3 {
     @apply text-h3 text-secondary;
   }
-  
+
   p {
     @apply text-body text-text;
   }
-  
+
   a {
     @apply text-link text-primary hover:opacity-80 transition-opacity;
   }
@@ -36,7 +36,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #F1DAC4;
+  background: #f1dac4;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -45,7 +45,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #A69CAC;
+  background: #a69cac;
 }
 
 /* Smooth scroll */
@@ -56,7 +56,7 @@ html {
 /* Selection color */
 ::selection {
   background-color: #474973;
-  color: #F1DAC4;
+  color: #f1dac4;
 }
 
 /* Swiper custom styles */
@@ -71,7 +71,8 @@ html {
 
 /* Gradient text animation */
 @keyframes gradient-shift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {

@@ -99,10 +99,10 @@ export default function CreateAreaPage() {
   const [areaDescription, setAreaDescription] = useState('');
   const [selectedActionService, setSelectedActionService] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
-  const [actionConfig, setActionConfig] = useState<Record<string, any>>({});
+  const [actionConfig, setActionConfig] = useState<Record<string, unknown>>({});
   const [selectedReactionService, setSelectedReactionService] = useState('');
   const [selectedReaction, setSelectedReaction] = useState('');
-  const [reactionConfig, setReactionConfig] = useState<Record<string, any>>({});
+  const [reactionConfig, setReactionConfig] = useState<Record<string, unknown>>({});
 
   // Current step for visual feedback
   const currentStep = !areaName ? 1 : !selectedAction ? 2 : !selectedReaction ? 3 : 4;
@@ -151,7 +151,7 @@ export default function CreateAreaPage() {
         if (selectedAction === 'day_of_week' && finalActionConfig.day) {
           finalActionConfig = {
             ...finalActionConfig,
-            dayOfWeek: parseInt(finalActionConfig.day, 10),
+            dayOfWeek: parseInt(String(finalActionConfig.day), 10),
           };
         }
       }
@@ -609,7 +609,7 @@ export default function CreateAreaPage() {
                                 </label>
                                 {renderConfigField(
                                   field,
-                                  actionConfig[field.name],
+                                  actionConfig[field.name] as string | number | boolean | undefined,
                                   handleActionConfigChange,
                                   'blue'
                                 )}
@@ -739,7 +739,11 @@ export default function CreateAreaPage() {
                                 </label>
                                 {renderConfigField(
                                   field,
-                                  reactionConfig[field.name],
+                                  reactionConfig[field.name] as
+                                    | string
+                                    | number
+                                    | boolean
+                                    | undefined,
                                   handleReactionConfigChange,
                                   'purple'
                                 )}

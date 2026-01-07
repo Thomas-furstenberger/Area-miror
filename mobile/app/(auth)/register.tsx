@@ -10,7 +10,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const handleRegister = async () => {
     if (!email || !password || !name) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
@@ -60,8 +60,8 @@ export default function RegisterScreen() {
           secureTextEntry
         />
 
-        <TouchableOpacity 
-          style={[styles.button, loading && { opacity: 0.7 }]} 
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.7 }]}
           onPress={handleRegister}
           disabled={loading}
         >

@@ -1,10 +1,3 @@
-/*
- ** EPITECH PROJECT, 2025
- ** Area-miror
- ** File description:
- ** _layout
- */
-
 import { Stack } from 'expo-router';
 import {
   useFonts,

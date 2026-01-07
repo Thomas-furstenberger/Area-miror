@@ -20,7 +20,7 @@ export const register = async (email: string, password: string, name: string) =>
       return { success: false, error: data.error || 'Erreur inconnue' };
     }
     return { success: true, data };
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };
@@ -38,7 +38,7 @@ export const login = async (email: string, password: string) => {
       return { success: false, error: data.error || 'Erreur inconnue' };
     }
     return { success: true, data };
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };
@@ -103,10 +103,10 @@ export const createArea = async (data: {
   description?: string;
   actionService: string;
   actionType: string;
-  actionConfig: any;
+  actionConfig: Record<string, unknown>;
   reactionService: string;
   reactionType: string;
-  reactionConfig: any;
+  reactionConfig: Record<string, unknown>;
 }) => {
   try {
     const response = await fetch(`${API_URL}/api/areas`, {
@@ -123,7 +123,7 @@ export const createArea = async (data: {
       return { success: false, error: resData.error || 'Erreur lors de la création' };
     }
     return { success: true, area: resData.area };
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Impossible de joindre le serveur' };
   }
 };

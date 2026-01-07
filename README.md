@@ -29,6 +29,7 @@ docker-compose up --build
 ### ✅ Implemented & Working
 
 **Backend (Fastify + TypeScript)**
+
 - PostgreSQL database with Prisma ORM
 - OAuth authentication (Gmail/Google, GitHub, Discord)
 - Complete REST API for AREA management
@@ -37,19 +38,23 @@ docker-compose up --build
 - CORS configured
 
 **Actions**
+
 - ✅ **Gmail**: `email_received` - Detects new unread emails
 
 **Reactions**
+
 - ✅ **Discord**: `send_message` - Sends message via webhook with custom emojis
 - ✅ **Gmail**: `send_email` - Sends email via API endpoint
 
 **Frontend Web (React + Vite)**
+
 - OAuth login (Google, GitHub, Discord)
 - AREA management interface (create, list, toggle, delete)
 - Real-time sync with backend
 - Responsive design
 
 **Mobile (React Native + Expo)**
+
 - Server configuration screen
 - OAuth authentication
 - Complete AREA management interface
@@ -179,6 +184,7 @@ docker-compose up --build server
 You need to configure OAuth applications for each provider:
 
 #### Google/Gmail
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project
 3. Enable Gmail API
@@ -187,11 +193,13 @@ You need to configure OAuth applications for each provider:
 6. Add scopes: `userinfo.email`, `userinfo.profile`, `gmail.modify`
 
 #### GitHub
+
 1. Go to GitHub Settings → Developer settings → OAuth Apps
 2. Create new OAuth App
 3. Authorization callback URL: `http://localhost:3000/api/auth/github/callback`
 
 #### Discord
+
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Create new application
 3. OAuth2 → Add redirect: `http://localhost:3000/api/auth/discord/callback`
@@ -201,6 +209,7 @@ You need to configure OAuth applications for each provider:
 See `.env.example` for all available configuration options.
 
 Required variables:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - Secret for JWT tokens
 - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
@@ -250,6 +259,7 @@ The application includes complete working examples:
 ### Hook Executor
 
 Runs every 2 minutes and:
+
 1. Fetches all active AREAs
 2. Checks each action (e.g., new email?)
 3. Triggers corresponding reaction (e.g., send Discord message)
@@ -258,6 +268,7 @@ Runs every 2 minutes and:
 ## 📦 API Endpoints
 
 ### Authentication
+
 - `GET /api/auth/gmail` - Gmail OAuth
 - `GET /api/auth/github` - GitHub OAuth
 - `GET /api/auth/discord` - Discord OAuth
@@ -265,6 +276,7 @@ Runs every 2 minutes and:
 - `POST /api/auth/register` - Create account
 
 ### AREAs
+
 - `GET /api/areas` - List user's AREAs
 - `POST /api/areas` - Create new AREA
 - `GET /api/areas/:id` - Get specific AREA
@@ -272,6 +284,7 @@ Runs every 2 minutes and:
 - `DELETE /api/areas/:id` - Delete AREA
 
 ### Info
+
 - `GET /about.json` - Service configuration for mobile
 - `GET /health` - Health check
 

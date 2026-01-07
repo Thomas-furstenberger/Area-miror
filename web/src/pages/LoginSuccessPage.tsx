@@ -1,32 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, Sparkles, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Sparkles, XCircle } from 'lucide-react';
 
 export default function LoginSuccessPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+
+  // Determine status based on URL params
+  const token = searchParams.get('token');
+  const status: 'success' | 'error' = token ? 'success' : 'error';
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
     if (token) {
       localStorage.setItem('token', token);
       console.log('Token saved:', token);
-      setStatus('success');
 
-      setTimeout(() => {
+      const successTimer = setTimeout(() => {
         navigate('/areas');
       }, 2000);
+      return () => clearTimeout(successTimer);
     } else {
       console.error('No token received');
-      setStatus('error');
-      setTimeout(() => {
+
+      const errorTimer = setTimeout(() => {
         navigate('/login');
       }, 3000);
+      return () => clearTimeout(errorTimer);
     }
-  }, [searchParams, navigate]);
+  }, [token, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 flex items-center justify-center px-4">
@@ -50,20 +52,6 @@ export default function LoginSuccessPage() {
         transition={{ duration: 0.5 }}
         className="relative z-10 bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center"
       >
-        {status === 'loading' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="w-20 h-20 mx-auto mb-6"
-            >
-              <Loader2 className="w-full h-full text-primary" />
-            </motion.div>
-            <h1 className="text-2xl font-bold text-text mb-2">Connexion en cours...</h1>
-            <p className="text-secondary">Veuillez patienter</p>
-          </motion.div>
-        )}
-
         {status === 'success' && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <motion.div
