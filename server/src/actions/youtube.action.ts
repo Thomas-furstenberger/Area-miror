@@ -1,6 +1,24 @@
 import { PrismaClient } from '@prisma/client';
 import { GmailService } from '../reactions/gmail.reaction';
 
+interface YoutubeChannelResponse {
+  items?: Array<{ id: string }>;
+}
+
+interface YoutubeSearchResponse {
+  items?: Array<{ snippet: { channelId: string } }>;
+}
+
+interface YoutubeActivityResponse {
+  items?: Array<{
+    snippet: {
+      type: string;
+      title: string;
+      publishedAt: string;
+    };
+  }>;
+}
+
 export class YoutubeAction {
   private gmailService: GmailService;
 
@@ -31,12 +49,7 @@ export class YoutubeAction {
         return false;
       }
       
-      const data = (await response.json()) as {
-        items?: {
-          snippet: { type: string; publishedAt: string; title: string };
-          contentDetails: unknown;
-        }[];
-        };
+      const data = (await response.json()) as YoutubeActivityResponse;
       
       if (!data.items || data.items.length === 0) {
         console.warn('[YouTube Debug] Aucune activité trouvée pour cette chaîne (data.items est vide).');
@@ -101,7 +114,8 @@ export class YoutubeAction {
                 continue;
             }
 
-            const data = (await response.json()) as any;
+            const data = (await response.json()) as YoutubeChannelResponse;
+            
             if (data.items && data.items.length > 0) {
                 console.log(`[YouTube Debug] Succès ! ID trouvé: ${data.items[0].id}`);
                 return data.items[0].id;
@@ -123,7 +137,8 @@ export class YoutubeAction {
              return null;
         }
 
-        const data = (await response.json()) as { items?: { snippet: { channelId: string } }[] };
+        const data = (await response.json()) as YoutubeSearchResponse;
+        
         if (data.items && data.items.length > 0) {
             console.log(`[YouTube Debug] Succès via Search ! ID trouvé: ${data.items[0].snippet.channelId}`);
             return data.items[0].snippet.channelId;

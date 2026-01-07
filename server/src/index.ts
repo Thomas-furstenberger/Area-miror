@@ -269,7 +269,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
         const stateObj = JSON.parse(rawState);
         if (stateObj.redirect) finalRedirectUrl = stateObj.redirect;
         if (stateObj.userToken) sessionTokenToLink = stateObj.userToken;
-      } catch (e) {
+      } catch {
         if (rawState.startsWith('http') || rawState.startsWith('exp://')) {
           finalRedirectUrl = rawState;
         } else if (rawState === 'mobile') {
@@ -394,7 +394,7 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
         const stateObj = JSON.parse(rawState);
         if (stateObj.redirect) finalRedirectUrl = stateObj.redirect;
         if (stateObj.userToken) sessionTokenToLink = stateObj.userToken;
-      } catch (e) {
+      } catch {
         if (rawState.startsWith('http') || rawState.startsWith('exp://')) {
           finalRedirectUrl = rawState;
         } else if (rawState === 'mobile') {
@@ -529,7 +529,7 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
         const stateObj = JSON.parse(rawState);
         if (stateObj.redirect) finalRedirectUrl = stateObj.redirect;
         if (stateObj.userToken) sessionTokenToLink = stateObj.userToken;
-      } catch (e) {
+      } catch {
         if (rawState.startsWith('http') || rawState.startsWith('exp://')) {
           finalRedirectUrl = rawState;
         } else if (rawState === 'mobile') {
