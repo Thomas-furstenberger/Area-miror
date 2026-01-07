@@ -241,7 +241,7 @@ export const SERVICES: ServiceConfig[] = [
       },
     ],
   },
-    {
+  {
     name: 'youtube',
     actions: [
       {

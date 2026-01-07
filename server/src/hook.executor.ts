@@ -122,7 +122,7 @@ export class HookExecutor {
       } else if (area.actionType === 'day_of_week') {
         triggered = this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
       }
-    } 
+    }
 
     if (!triggered) {
       return;

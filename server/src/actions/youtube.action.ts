@@ -8,7 +8,11 @@ export class YoutubeAction {
     this.gmailService = new GmailService(prisma);
   }
 
-  async checkNewVideo(userId: number, config: { channel_url: string }, lastTriggered: Date | null): Promise<boolean> {
+  async checkNewVideo(
+    userId: number,
+    config: { channel_url: string },
+    lastTriggered: Date | null
+  ): Promise<boolean> {
     try {
       const accessToken = await this.gmailService.getValidToken(userId);
 
@@ -26,12 +30,12 @@ export class YoutubeAction {
       );
 
       if (!response.ok) return false;
-      
+
       const data = (await response.json()) as any;
       if (!data.items || data.items.length === 0) return false;
 
       const latestVideo = data.items[0];
-      
+
       if (latestVideo.snippet.type !== 'upload') return false;
 
       const videoDate = new Date(latestVideo.snippet.publishedAt);
@@ -61,10 +65,10 @@ export class YoutubeAction {
     if (url.includes('@')) {
       handle = url.split('@')[1].split('/')[0];
     } else if (url.includes('/c/') || url.includes('/user/')) {
-        const parts = url.split('/').filter(p => p.length > 0);
-        handle = parts[parts.length - 1];
+      const parts = url.split('/').filter((p) => p.length > 0);
+      handle = parts[parts.length - 1];
     } else {
-        handle = url;
+      handle = url;
     }
 
     const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(handle)}&maxResults=1`;
@@ -74,7 +78,7 @@ export class YoutubeAction {
 
     if (!response.ok) return null;
     const data = (await response.json()) as any;
-    
+
     if (data.items && data.items.length > 0) {
       return data.items[0].snippet.channelId;
     }
