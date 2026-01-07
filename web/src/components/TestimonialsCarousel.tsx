@@ -58,7 +58,7 @@ const testimonials = [
 ];
 
 export default function TestimonialsCarousel() {
-  const swiperRef = useRef<SwiperType>();
+  const swiperRef = useRef<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (

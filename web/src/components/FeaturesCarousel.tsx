@@ -71,7 +71,7 @@ const features = [
 ];
 
 export default function FeaturesCarousel() {
-  const swiperRef = useRef<SwiperType>();
+  const swiperRef = useRef<SwiperType | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
