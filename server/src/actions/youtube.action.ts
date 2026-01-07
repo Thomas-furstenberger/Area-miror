@@ -31,7 +31,12 @@ export class YoutubeAction {
 
       if (!response.ok) return false;
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as {
+        items?: {
+          snippet: { type: string; publishedAt: string; title: string };
+          contentDetails: unknown;
+        }[];
+      };
       if (!data.items || data.items.length === 0) return false;
 
       const latestVideo = data.items[0];
@@ -77,7 +82,7 @@ export class YoutubeAction {
     });
 
     if (!response.ok) return null;
-    const data = (await response.json()) as any;
+    const data = (await response.json()) as { items?: { snippet: { channelId: string } }[] };
 
     if (data.items && data.items.length > 0) {
       return data.items[0].snippet.channelId;
