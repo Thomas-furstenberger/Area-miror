@@ -77,23 +77,25 @@ export const fetchAbout = async () => {
 };
 
 export const createArea = async (
+  name: string,
   actionProvider: string,
   actionId: string,
+  actionConfig: any,
   reactionProvider: string,
   reactionId: string,
-  params: any = {}
+  reactionConfig: any
 ) => {
   return apiCall('/api/areas', 'POST', {
-    name: params.name || `${actionProvider} ➜ ${reactionProvider}`,
+    name: name,
     description: 'Créé depuis le mobile',
 
     actionService: actionProvider,
     actionType: actionId,
-    actionConfig: params,
+    actionConfig: actionConfig,
 
     reactionService: reactionProvider,
     reactionType: reactionId,
-    reactionConfig: params,
+    reactionConfig: reactionConfig,
   });
 };
 

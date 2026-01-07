@@ -1,3 +1,10 @@
+/*
+ ** EPITECH PROJECT, 2026
+ ** Area-miror
+ ** File description:
+ ** index
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
@@ -21,23 +28,38 @@ export default function ServerConfigScreen() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkSession = async () => {
-      const savedIp = await AsyncStorage.getItem('server_ip');
-      const savedPort = await AsyncStorage.getItem('server_port');
+      try {
+        const savedIp = await AsyncStorage.getItem('server_ip');
+        const savedPort = await AsyncStorage.getItem('server_port');
 
-      if (savedIp) setIp(savedIp);
-      if (savedPort) setPort(savedPort);
+        if (savedIp) setIp(savedIp);
+        if (savedPort) setPort(savedPort);
 
-      const token = await AsyncStorage.getItem('user_token');
+        const token = await AsyncStorage.getItem('user_token');
 
-      if (token && savedIp) {
-        console.log('Token trouvé, connexion automatique...');
-        router.replace('/(tabs)');
-      } else {
-        setChecking(false);
+        if (token && savedIp) {
+          console.log('Token trouvé, connexion automatique...');
+          setTimeout(() => {
+            if (isMounted) {
+              router.replace('/(tabs)/areas');
+            }
+          }, 100);
+        } else {
+          if (isMounted) setChecking(false);
+        }
+      } catch (e) {
+        if (isMounted) setChecking(false);
       }
     };
+
     checkSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSave = async () => {

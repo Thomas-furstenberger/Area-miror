@@ -32,11 +32,11 @@ export const SERVICES: ServiceConfig[] = [
     actions: [
       {
         name: 'new_commit',
-        description: 'New commit on a repository',
+        description: 'Nouveau commit sur un dépôt',
         configFields: [
           {
             name: 'repo_owner',
-            label: 'Propriétaire du repo',
+            label: 'Propriétaire du dépôt',
             type: 'text',
             placeholder: 'ex: facebook',
             required: true,
@@ -56,11 +56,11 @@ export const SERVICES: ServiceConfig[] = [
     reactions: [
       {
         name: 'create_issue',
-        description: 'Create a new issue',
+        description: 'Créer une nouvelle issue',
         configFields: [
           {
             name: 'repo_owner',
-            label: 'Propriétaire du repo',
+            label: 'Propriétaire du dépôt',
             type: 'text',
             placeholder: 'ex: facebook',
             required: true,
@@ -76,7 +76,7 @@ export const SERVICES: ServiceConfig[] = [
             name: 'title',
             label: "Titre de l'issue",
             type: 'text',
-            placeholder: 'Bug report...',
+            placeholder: 'Rapport de bug...',
             required: true,
           },
           {
@@ -95,7 +95,7 @@ export const SERVICES: ServiceConfig[] = [
     actions: [
       {
         name: 'time_reached',
-        description: 'When a specific time is reached during the day',
+        description: 'Quand une heure précise est atteinte',
         configFields: [
           {
             name: 'time',
@@ -109,7 +109,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'date_reached',
-        description: 'When a specific date is reached',
+        description: 'Quand une date précise est atteinte',
         configFields: [
           {
             name: 'date',
@@ -122,7 +122,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'day_of_week',
-        description: 'When a specific day of the week is reached',
+        description: 'Quand un jour spécifique de la semaine est atteint',
         configFields: [
           {
             name: 'day',
@@ -156,7 +156,7 @@ export const SERVICES: ServiceConfig[] = [
     actions: [
       {
         name: 'email_received',
-        description: 'A new email is received',
+        description: 'Un nouvel email est reçu',
         configFields: [
           {
             name: 'from',
@@ -180,7 +180,7 @@ export const SERVICES: ServiceConfig[] = [
     reactions: [
       {
         name: 'send_email',
-        description: 'Send an email to a recipient',
+        description: 'Envoyer un email à un destinataire',
         configFields: [
           {
             name: 'to',
@@ -213,15 +213,15 @@ export const SERVICES: ServiceConfig[] = [
     reactions: [
       {
         name: 'send_message',
-        description: 'Send a message to a Discord channel',
+        description: 'Envoyer un message sur un canal Discord',
         configFields: [
           {
             name: 'webhookUrl',
-            label: 'Webhook URL Discord',
+            label: 'URL du Webhook Discord',
             type: 'url',
             placeholder: 'https://discord.com/api/webhooks/...',
             required: true,
-            description: 'URL du webhook Discord (Settings > Integrations > Webhooks)',
+            description: 'URL du webhook Discord (Paramètres > Intégrations > Webhooks)',
           },
           {
             name: 'message',

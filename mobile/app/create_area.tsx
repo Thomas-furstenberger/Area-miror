@@ -1,398 +1,558 @@
+/*
+ ** EPITECH PROJECT, 2026
+ ** Area-miror
+ ** File description:
+ ** create_area
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
   Text,
+  ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   TextInput,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { COLORS } from '@/constants/theme';
-import { fetchAbout, createArea } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { getBaseUrl, createArea } from '@/services/api';
 
-type Service = { name: string; actions: Action[]; reactions: Reaction[] };
-type Action = { name: string; description: string };
-type Reaction = { name: string; description: string };
+interface ConfigField {
+  name: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: { value: string; label: string }[];
+  description?: string;
+}
 
-const getIconName = (name: string) => {
+interface Action {
+  name: string;
+  description: string;
+  configFields?: ConfigField[];
+}
+
+interface Reaction {
+  name: string;
+  description: string;
+  configFields?: ConfigField[];
+}
+
+interface Service {
+  name: string;
+  actions: Action[];
+  reactions: Reaction[];
+}
+
+const getServiceIcon = (name: string) => {
   const n = name.toLowerCase();
-  if (n.includes('google')) return 'logo-google';
   if (n.includes('github')) return 'logo-github';
+  if (n.includes('google') || n.includes('gmail')) return 'logo-google';
   if (n.includes('discord')) return 'logo-discord';
   if (n.includes('time')) return 'time';
   return 'cube';
 };
 
+const getServiceColor = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('github')) return '#333';
+  if (n.includes('google') || n.includes('gmail')) return '#DB4437';
+  if (n.includes('discord')) return '#5865F2';
+  if (n.includes('time')) return '#F5A623';
+  return COLORS.link;
+};
+
 export default function CreateAreaScreen() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(true);
+
   const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [selectedActionService, setSelectedActionService] = useState<Service | null>(null);
-  const [selectedAction, setSelectedAction] = useState<Action | null>(null);
-  const [actionParams, setActionParams] = useState<any>({});
+  const [step, setStep] = useState(1);
+  const totalSteps = 7;
 
-  const [selectedReactionService, setSelectedReactionService] = useState<Service | null>(null);
-  const [selectedReaction, setSelectedReaction] = useState<Reaction | null>(null);
-  const [reactionParams, setReactionParams] = useState<any>({});
+  const [actionService, setActionService] = useState<Service | null>(null);
+  const [action, setAction] = useState<Action | null>(null);
+  const [actionConfig, setActionConfig] = useState<any>({});
+
+  const [reactionService, setReactionService] = useState<Service | null>(null);
+  const [reaction, setReaction] = useState<Reaction | null>(null);
+  const [reactionConfig, setReactionConfig] = useState<any>({});
+
+  const [areaName, setAreaName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchAbout().then((res) => {
-      if (res.success && res.data?.server?.services) {
-        setServices(res.data.server.services);
-      }
-      setLoading(false);
-    });
+    fetchServices();
   }, []);
 
-  const goNext = () => {
-    Haptics.selectionAsync();
-    setStep(step + 1);
-  };
-
-  const goBack = () => {
-    Haptics.selectionAsync();
-    if (step === 0) router.back();
-    else setStep(step - 1);
-  };
-
-  const handleCreate = async () => {
-    if (!selectedActionService || !selectedAction || !selectedReactionService || !selectedReaction)
-      return;
-
-    setLoading(true);
-    const finalParams = { ...actionParams, ...reactionParams };
-
-    const result = await createArea(
-      selectedActionService.name,
-      selectedAction.name,
-      selectedReactionService.name,
-      selectedReaction.name,
-      finalParams
-    );
-
-    setLoading(false);
-    if (result.success) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Succès', 'Votre AREA a été créée !', [
-        { text: 'OK', onPress: () => router.replace('/(tabs)/areas') },
-      ]);
-    } else {
-      Alert.alert('Erreur', "Impossible de créer l'AREA.");
+  const fetchServices = async () => {
+    try {
+      const baseUrl = await getBaseUrl();
+      const response = await fetch(`${baseUrl}/about.json`);
+      const data = await response.json();
+      if (data?.server?.services) {
+        setServices(data.server.services);
+      }
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de charger les services');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderServiceGrid = (isReaction: boolean) => (
-    <View style={styles.grid}>
-      {services
-        .filter((s) => (isReaction ? s.reactions?.length > 0 : s.actions?.length > 0))
-        .map((service, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={styles.card}
-            onPress={() => {
-              if (isReaction) setSelectedReactionService(service);
-              else setSelectedActionService(service);
-              goNext();
-            }}
-          >
-            <View style={styles.iconBox}>
-              <Ionicons name={getIconName(service.name) as any} size={28} color={COLORS.h1} />
-            </View>
-            <Text style={styles.cardText}>{service.name}</Text>
-          </TouchableOpacity>
-        ))}
+  const validateConfig = (fields: ConfigField[] | undefined, values: any) => {
+    if (!fields) return true;
+    for (const field of fields) {
+      if (field.required && !values[field.name]) {
+        Alert.alert('Manquant', `Le champ "${field.label}" est requis.`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === 3) {
+      if (!validateConfig(action?.configFields, actionConfig)) return;
+    }
+    if (step === 6) {
+      if (!validateConfig(reaction?.configFields, reactionConfig)) return;
+    }
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+    else router.back();
+  };
+
+  const handleCreate = async () => {
+    if (!areaName.trim()) {
+      Alert.alert('Erreur', "Donnez un nom à l'automation.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await createArea(
+        areaName,
+        actionService!.name,
+        action!.name,
+        actionConfig,
+        reactionService!.name,
+        reaction!.name,
+        reactionConfig
+      );
+      if (res.success) {
+        Alert.alert('Succès', 'Automation créée !');
+        router.replace('/(tabs)/areas');
+      } else {
+        Alert.alert('Erreur', res.error || 'Erreur inconnue');
+      }
+    } catch (e) {
+      Alert.alert('Erreur', 'Erreur réseau');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const renderProgressBar = () => (
+    <View style={styles.progressContainer}>
+      <View style={[styles.progressBar, { width: `${(step / totalSteps) * 100}%` }]} />
     </View>
   );
 
-  const renderList = (items: any[], isReaction: boolean) => (
-    <View>
-      {items.map((item, idx) => (
-        <TouchableOpacity
-          key={idx}
-          style={styles.listItem}
-          onPress={() => {
-            if (isReaction) setSelectedReaction(item);
-            else setSelectedAction(item);
-            goNext();
-          }}
-        >
-          <Text style={styles.listTitle}>{item.name.replace(/_/g, ' ')}</Text>
-          <Text style={styles.listDesc}>{item.description}</Text>
-          <Ionicons name="chevron-forward" size={20} color="#CCC" />
-        </TouchableOpacity>
-      ))}
-    </View>
+  const renderServiceCard = (s: Service, onPress: () => void) => (
+    <TouchableOpacity key={s.name} style={styles.card} onPress={onPress}>
+      <View style={[styles.iconBox, { backgroundColor: getServiceColor(s.name) + '20' }]}>
+        <Ionicons name={getServiceIcon(s.name) as any} size={24} color={getServiceColor(s.name)} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 15 }}>
+        <Text style={styles.cardTitle}>{s.name.charAt(0).toUpperCase() + s.name.slice(1)}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+    </TouchableOpacity>
   );
 
-  const renderActionConfig = () => {
-    const isTimer = selectedActionService?.name.toLowerCase().includes('time');
+  const renderItemCard = (title: string, desc: string, onPress: () => void) => (
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.cardTitle}>{desc}</Text>
+        <Text style={styles.cardSub}>{title}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+    </TouchableOpacity>
+  );
 
-    if (isTimer) {
+  const renderFormFields = (fields: ConfigField[] | undefined, values: any, setValues: any) => {
+    if (!fields || fields.length === 0) {
       return (
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Configuration du Timer</Text>
-          <Text style={styles.subLabel}>Entrez l'heure au format HH:mm (ex: 14:30)</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: 08:00"
-            placeholderTextColor="#999"
-            keyboardType="numbers-and-punctuation"
-            onChangeText={(text) =>
-              setActionParams({
-                ...actionParams,
-                time: text,
-                hour: parseInt(text.split(':')[0]),
-                minute: parseInt(text.split(':')[1]),
-              })
-            }
-          />
-
-          {selectedAction?.name === 'date_reached' && (
-            <TextInput
-              style={[styles.input, { marginTop: 10 }]}
-              placeholder="Date (YYYY-MM-DD)"
-              placeholderTextColor="#999"
-              onChangeText={(text) => setActionParams({ ...actionParams, date: text })}
-            />
-          )}
-
-          <TouchableOpacity style={styles.nextButton} onPress={goNext}>
-            <Text style={styles.nextButtonText}>Suivant</Text>
-          </TouchableOpacity>
+        <View style={styles.emptyState}>
+          <Ionicons name="checkmark-circle-outline" size={48} color={COLORS.link} />
+          <Text style={styles.emptyText}>Aucune configuration requise.</Text>
         </View>
       );
     }
 
-    return (
-      <View style={styles.centerMsg}>
-        <Text style={styles.msgText}>Aucune configuration requise pour cette action.</Text>
-        <TouchableOpacity style={styles.nextButton} onPress={goNext}>
-          <Text style={styles.nextButtonText}>Suivant</Text>
-        </TouchableOpacity>
+    return fields.map((f) => (
+      <View key={f.name} style={styles.inputContainer}>
+        <Text style={styles.label}>
+          {f.label} {f.required && <Text style={{ color: 'red' }}>*</Text>}
+        </Text>
+        {f.description && <Text style={styles.helperText}>{f.description}</Text>}
+
+        {f.type === 'textarea' ? (
+          <TextInput
+            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+            multiline
+            placeholder={f.placeholder}
+            value={values[f.name]}
+            onChangeText={(t) => setValues({ ...values, [f.name]: t })}
+          />
+        ) : f.type === 'select' ? (
+          <View style={styles.selectRow}>
+            {f.options?.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.optionChip,
+                  values[f.name] === opt.value && styles.optionChipSelected,
+                ]}
+                onPress={() => setValues({ ...values, [f.name]: opt.value })}
+              >
+                <Text
+                  style={[styles.optionText, values[f.name] === opt.value && { color: '#FFF' }]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <TextInput
+            style={styles.input}
+            placeholder={f.placeholder}
+            keyboardType={f.type === 'number' ? 'numeric' : 'default'}
+            value={values[f.name]}
+            onChangeText={(t) => setValues({ ...values, [f.name]: t })}
+          />
+        )}
       </View>
-    );
+    ));
   };
 
-  const renderReactionConfig = () => {
-    const isDiscord = selectedReactionService?.name.toLowerCase().includes('discord');
-    const isGmail =
-      selectedReactionService?.name.toLowerCase().includes('google') ||
-      selectedReactionService?.name.toLowerCase().includes('gmail');
-
-    return (
-      <View style={styles.formContainer}>
-        {isDiscord && (
-          <>
-            <Text style={styles.label}>Webhook Discord</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="https://discord.com/api/webhooks/..."
-              onChangeText={(t) => setReactionParams({ ...reactionParams, webhookUrl: t })}
-            />
-            <Text style={[styles.label, { marginTop: 10 }]}>Message (Optionnel)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Hello world!"
-              onChangeText={(t) => setReactionParams({ ...reactionParams, message: t })}
-            />
-          </>
-        )}
-
-        {isGmail && (
-          <>
-            <Text style={styles.label}>Destinataire</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="ami@example.com"
-              keyboardType="email-address"
-              onChangeText={(t) => setReactionParams({ ...reactionParams, to: t })}
-            />
-            <Text style={[styles.label, { marginTop: 10 }]}>Sujet</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Sujet du mail"
-              onChangeText={(t) => setReactionParams({ ...reactionParams, subject: t })}
-            />
-            <Text style={[styles.label, { marginTop: 10 }]}>Corps du message</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Contenu..."
-              onChangeText={(t) => setReactionParams({ ...reactionParams, body: t })}
-            />
-          </>
-        )}
-
-        {!isDiscord && !isGmail && (
-          <Text style={styles.msgText}>Aucune configuration spécifique détectée.</Text>
-        )}
-
-        <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: '#4CAF50' }]}
-          onPress={handleCreate}
-        >
-          <Text style={styles.nextButtonText}>Créer l'AREA</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const getStepTitle = () => {
+  const renderContent = () => {
     switch (step) {
-      case 0:
-        return 'Choisissez le déclencheur';
       case 1:
-        return `Quoi dans ${selectedActionService?.name}?`;
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Qui déclenche l'action ?</Text>
+            {services
+              .filter((s) => s.actions.length > 0)
+              .map((s) =>
+                renderServiceCard(s, () => {
+                  setActionService(s);
+                  handleNext();
+                })
+              )}
+          </View>
+        );
+
       case 2:
-        return 'Configurer le déclencheur';
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Quel événement ?</Text>
+            <View style={styles.selectedBadge}>
+              <Ionicons name={getServiceIcon(actionService!.name) as any} size={16} color="#555" />
+              <Text style={styles.badgeText}>{actionService?.name}</Text>
+            </View>
+            {actionService?.actions.map((a) =>
+              renderItemCard(a.name, a.description, () => {
+                setAction(a);
+                handleNext();
+              })
+            )}
+          </View>
+        );
+
       case 3:
-        return 'Choisissez la réaction';
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Configuration de l'Action</Text>
+            <Text style={styles.subHeader}>Paramétrez : {action?.description}</Text>
+
+            <View style={styles.formBox}>
+              {renderFormFields(action?.configFields, actionConfig, setActionConfig)}
+            </View>
+
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>Valider et Continuer</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        );
+
       case 4:
-        return `Quoi dans ${selectedReactionService?.name}?`;
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Quel service réagit ?</Text>
+            {services
+              .filter((s) => s.reactions.length > 0)
+              .map((s) =>
+                renderServiceCard(s, () => {
+                  setReactionService(s);
+                  handleNext();
+                })
+              )}
+          </View>
+        );
+
       case 5:
-        return 'Configurer la réaction';
-      default:
-        return '';
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Quelle réaction ?</Text>
+            <View style={styles.selectedBadge}>
+              <Ionicons
+                name={getServiceIcon(reactionService!.name) as any}
+                size={16}
+                color="#555"
+              />
+              <Text style={styles.badgeText}>{reactionService?.name}</Text>
+            </View>
+            {reactionService?.reactions.map((r) =>
+              renderItemCard(r.name, r.description, () => {
+                setReaction(r);
+                handleNext();
+              })
+            )}
+          </View>
+        );
+
+      case 6:
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Configuration de la Réaction</Text>
+            <Text style={styles.subHeader}>Paramétrez : {reaction?.description}</Text>
+
+            <View style={styles.formBox}>
+              {renderFormFields(reaction?.configFields, reactionConfig, setReactionConfig)}
+            </View>
+
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>Valider et Continuer</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 7:
+        return (
+          <View>
+            <Text style={styles.headerTitle}>Résumé et Nommage</Text>
+
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.ifText}>SI</Text>
+                <View style={styles.summaryContent}>
+                  <Text style={styles.summaryService}>{actionService?.name}</Text>
+                  <Text style={styles.summaryDesc}>{action?.description}</Text>
+                </View>
+              </View>
+
+              <View style={styles.connectorLine} />
+
+              <View style={styles.summaryRow}>
+                <Text style={styles.thenText}>ALORS</Text>
+                <View style={styles.summaryContent}>
+                  <Text style={styles.summaryService}>{reactionService?.name}</Text>
+                  <Text style={styles.summaryDesc}>{reaction?.description}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Nom de l'automation</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: Sync GitHub vers Discord"
+                value={areaName}
+                onChangeText={setAreaName}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.createButton, submitting && { opacity: 0.7 }]}
+              onPress={handleCreate}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.createButtonText}>Lancer l'Automation</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
     }
   };
 
+  if (loading)
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.link} />
+      </View>
+    );
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.h1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nouvelle AREA</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.stepIndicator}>
+            Étape {step} sur {totalSteps}
+          </Text>
+        </View>
 
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { width: `${((step + 1) / 6) * 100}%` }]} />
-      </View>
+        {renderProgressBar()}
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.stepTitle}>{getStepTitle()}</Text>
-
-        {loading ? (
-          <ActivityIndicator size="large" color={COLORS.link} style={{ marginTop: 40 }} />
-        ) : (
-          <>
-            {step === 0 && renderServiceGrid(false)}
-            {step === 1 && renderList(selectedActionService?.actions || [], false)}
-            {step === 2 && renderActionConfig()}
-            {step === 3 && renderServiceGrid(true)}
-            {step === 4 && renderList(selectedReactionService?.reactions || [], true)}
-            {step === 5 && renderReactionConfig()}
-          </>
-        )}
-      </ScrollView>
+        <ScrollView contentContainerStyle={styles.scrollContent}>{renderContent()}</ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-    paddingTop: Platform.OS === 'android' ? 40 : 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  headerTitle: { fontSize: 18, fontFamily: 'Inter_700Bold', color: COLORS.h1 },
-  backButton: { padding: 8, borderRadius: 12, backgroundColor: '#FFF' },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFF' },
+  backBtn: { marginRight: 15 },
+  stepIndicator: { fontSize: 16, fontWeight: '600', color: '#666' },
+
   progressContainer: { height: 4, backgroundColor: '#E0E0E0', width: '100%' },
   progressBar: { height: '100%', backgroundColor: COLORS.link },
-  content: { padding: 24, paddingBottom: 50 },
-  stepTitle: { fontSize: 24, fontFamily: 'Inter_700Bold', color: COLORS.h1, marginBottom: 24 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  scrollContent: { padding: 20 },
+
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 20 },
+  subHeader: { fontSize: 16, color: '#666', marginBottom: 20 },
+
   card: {
-    width: '48%',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EEE',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   iconBox: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#F5F7FA',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  cardText: {
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: COLORS.text,
-    textTransform: 'capitalize',
-  },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
+  cardSub: { fontSize: 13, color: '#888', marginTop: 4, textTransform: 'uppercase' },
 
-  listItem: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 12,
+  selectedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#EFEFEF',
+    alignSelf: 'flex-start',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  badgeText: { marginLeft: 8, fontWeight: '600', color: '#555', textTransform: 'uppercase' },
+
+  formBox: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, marginBottom: 20 },
+  inputContainer: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8 },
+  helperText: { fontSize: 12, color: '#888', marginBottom: 8, fontStyle: 'italic' },
+  input: {
+    backgroundColor: '#F9F9F9',
+    padding: 15,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#EEE',
-  },
-  listTitle: {
     fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: COLORS.text,
-    textTransform: 'capitalize',
-  },
-  listDesc: {
-    fontSize: 12,
-    color: '#888',
-    position: 'absolute',
-    bottom: 18,
-    left: 20,
-    maxWidth: '80%',
   },
 
-  formContainer: { backgroundColor: '#FFF', padding: 24, borderRadius: 20 },
-  label: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: COLORS.h1, marginBottom: 8 },
-  subLabel: { fontSize: 12, color: '#666', marginBottom: 12 },
-  input: {
-    backgroundColor: '#F5F7FA',
+  nextButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.link,
+    padding: 18,
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: COLORS.text,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.link,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  nextButtonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginRight: 10 },
+
+  createButton: {
+    backgroundColor: '#10B981',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  createButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+
+  emptyState: { alignItems: 'center', padding: 20 },
+  emptyText: { marginTop: 10, color: '#888' },
+
+  selectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  optionChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  nextButton: {
-    backgroundColor: COLORS.link,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  nextButtonText: { color: '#FFF', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  optionChipSelected: { backgroundColor: COLORS.link, borderColor: COLORS.link },
+  optionText: { color: '#555', fontWeight: '500' },
 
-  centerMsg: { alignItems: 'center', marginTop: 20 },
-  msgText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 },
+  summaryCard: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#EEE',
+  },
+  summaryRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  ifText: { fontSize: 14, fontWeight: '900', color: '#6366F1', width: 60, marginTop: 2 },
+  thenText: { fontSize: 14, fontWeight: '900', color: '#10B981', width: 60, marginTop: 2 },
+  summaryContent: { flex: 1 },
+  summaryService: { fontSize: 12, color: '#888', textTransform: 'uppercase', fontWeight: '700' },
+  summaryDesc: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 2 },
+  connectorLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: '#DDD',
+    marginLeft: 22,
+    marginVertical: 10,
+  },
 });

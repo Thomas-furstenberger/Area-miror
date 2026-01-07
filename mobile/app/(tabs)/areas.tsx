@@ -1,3 +1,10 @@
+/*
+ ** EPITECH PROJECT, 2026
+ ** Area-miror
+ ** File description:
+ ** areas
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
@@ -10,21 +17,29 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  StatusBar,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getUserAreas, deleteArea } from '@/services/api';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const getIconName = (serviceName: string) => {
+const getIconName = (serviceName: string): keyof typeof Ionicons.glyphMap => {
   const name = serviceName?.toLowerCase() || '';
   if (name.includes('google') || name.includes('gmail')) return 'logo-google';
   if (name.includes('github')) return 'logo-github';
   if (name.includes('discord')) return 'logo-discord';
-  if (name.includes('time') || name.includes('timer')) return 'time';
-  return 'cube';
+  if (name.includes('spotify')) return 'musical-notes';
+  if (name.includes('twitch')) return 'logo-twitch';
+  if (name.includes('time') || name.includes('timer') || name.includes('date')) return 'time';
+  if (name.includes('weather') || name.includes('meteo')) return 'partly-sunny';
+  return 'flash';
 };
+
+const { width } = Dimensions.get('window');
 
 export default function AreasScreen() {
   const router = useRouter();
@@ -55,47 +70,114 @@ export default function AreasScreen() {
   );
 
   const handleDelete = async (id: string, name: string) => {
-    console.log(`[UI] Tentative de suppression de l'AREA : ${name} (ID: ${id})`);
-
-    if (!id) {
-      Alert.alert('Erreur', "ID de l'automation introuvable.");
-      return;
-    }
-
+    if (!id) return;
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
-    Alert.alert('Supprimer', `Voulez-vous arrêter "${name}" ?`, [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const result = await deleteArea(id);
-
-            if (result.success) {
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              loadAreas();
-            } else {
-              Alert.alert('Erreur', `Échec suppression : ${result.error || 'Erreur inconnue'}`);
+    Alert.alert(
+      "Arrêter l'automation ?",
+      `Êtes-vous sûr de vouloir supprimer "${name}" ? Cette action est irréversible.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await deleteArea(id);
+              if (result.success) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                loadAreas();
+              } else {
+                Alert.alert('Oups', 'Impossible de supprimer pour le moment.');
+              }
+            } catch (err: any) {
+              console.error(err);
             }
-          } catch (err: any) {
-            Alert.alert('Erreur Critique', err.message);
-          }
+          },
         },
-      },
-    ]);
+      ]
+    );
+  };
+
+  const renderAreaCard = (area: any, index: number) => {
+    const actionIcon = getIconName(area.actionService);
+    const reactionIcon = getIconName(area.reactionService);
+
+    return (
+      <View key={area.id || index} style={styles.cardContainer}>
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {area.name || 'Automation sans nom'}
+              </Text>
+              <View style={styles.activeBadge}>
+                <View style={styles.activeDot} />
+                <Text style={styles.activeText}>Active</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => handleDelete(area.id, area.name)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.deleteButton}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.flowContainer}>
+            <View style={styles.flowStep}>
+              <View style={[styles.iconCircle, { backgroundColor: COLORS.link + '15' }]}>
+                <Ionicons name={actionIcon} size={22} color={COLORS.link} />
+              </View>
+              <View style={styles.stepTextContainer}>
+                <Text style={styles.stepLabel}>SI</Text>
+                <Text style={styles.stepValue} numberOfLines={1}>
+                  {area.actionService || 'Service'}
+                </Text>
+                <Text style={styles.stepSubValue} numberOfLines={1}>
+                  {area.actionType?.replace(/_/g, ' ').toLowerCase()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.connector}>
+              <Ionicons name="arrow-down-circle" size={24} color="#E0E0E0" />
+            </View>
+
+            <View style={styles.flowStep}>
+              <View style={[styles.iconCircle, { backgroundColor: COLORS.h1 + '15' }]}>
+                <Ionicons name={reactionIcon} size={22} color={COLORS.h1} />
+              </View>
+              <View style={styles.stepTextContainer}>
+                <Text style={styles.stepLabel}>ALORS</Text>
+                <Text style={styles.stepValue} numberOfLines={1}>
+                  {area.reactionService || 'Service'}
+                </Text>
+                <Text style={styles.stepSubValue} numberOfLines={1}>
+                  {area.reactionType?.replace(/_/g, ' ').toLowerCase()}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
+
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerTexts}>
           <Text style={styles.headerTitle}>Mes Automations</Text>
-          <Text style={styles.headerSubtitle}>
-            {areas.length} active{areas.length > 1 ? 's' : ''}
-          </Text>
+          <Text style={styles.headerSubtitle}>Gérez vos flux actifs</Text>
         </View>
+
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => {
@@ -104,7 +186,7 @@ export default function AreasScreen() {
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color="#FFF" />
+          <Ionicons name="add" size={30} color="#FFF" />
         </TouchableOpacity>
       </View>
 
@@ -115,69 +197,45 @@ export default function AreasScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => {
-              Haptics.selectionAsync();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setRefreshing(true);
               loadAreas();
             }}
+            colors={[COLORS.link]}
             tintColor={COLORS.link}
           />
         }
       >
         {loading && !refreshing ? (
-          <ActivityIndicator size="large" color={COLORS.link} style={{ marginTop: 50 }} />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.link} />
+            <Text style={styles.loadingText}>Synchronisation...</Text>
+          </View>
         ) : areas.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="cube-outline" size={40} color={COLORS.h2} />
+            <View style={styles.emptyIconContainer}>
+              <Ionicons
+                name="git-network-outline"
+                size={60}
+                color={COLORS.h2}
+                style={{ opacity: 0.5 }}
+              />
             </View>
-            <Text style={styles.emptyText}>Aucune automation active</Text>
-            <Text style={styles.emptySubtext}>Cliquez sur + pour créer votre première AREA</Text>
+            <Text style={styles.emptyTitle}>C'est calme par ici</Text>
+            <Text style={styles.emptyDesc}>
+              Vous n'avez pas encore d'automation active. Créez votre première dès maintenant.
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => router.push('/create_area')}
+            >
+              <Text style={styles.emptyButtonText}>Créer une automation</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          areas.map((area, index) => (
-            <View key={area.id || index} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.serviceRow}>
-                  <View style={[styles.iconBox, { backgroundColor: '#E3F2FD' }]}>
-                    <Ionicons
-                      name={getIconName(area.actionService) as any}
-                      size={20}
-                      color={COLORS.h1}
-                    />
-                  </View>
-                  <Ionicons
-                    name="arrow-forward"
-                    size={16}
-                    color="#B0B0B0"
-                    style={{ marginHorizontal: 8 }}
-                  />
-                  <View style={[styles.iconBox, { backgroundColor: '#F3E5F5' }]}>
-                    <Ionicons
-                      name={getIconName(area.reactionService) as any}
-                      size={20}
-                      color={COLORS.h1}
-                    />
-                  </View>
-                </View>
-                <TouchableOpacity
-                  onPress={() => handleDelete(area.id, area.name)}
-                  style={styles.deleteBtn}
-                >
-                  <Ionicons name="trash-outline" size={20} color="#FF5252" />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.cardTitle}>{area.name || 'Automation sans nom'}</Text>
-
-              <View style={styles.cardFooter}>
-                <Text style={styles.triggerText}>Si {area.actionType?.replace(/_/g, ' ')}</Text>
-                <View style={styles.activeBadge}>
-                  <View style={styles.activeDot} />
-                  <Text style={styles.activeText}>Active</Text>
-                </View>
-              </View>
-            </View>
-          ))
+          <View style={{ paddingBottom: 20 }}>
+            {areas.map((area, index) => renderAreaCard(area, index))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -188,95 +246,229 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAFAFA',
-    paddingTop: Platform.OS === 'android' ? 40 : 0,
+    paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FAFAFA',
+    zIndex: 10,
   },
-  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 28, color: COLORS.h1 },
-  headerSubtitle: { fontFamily: 'Inter_500Medium', fontSize: 14, color: COLORS.h2, marginTop: 4 },
+  headerTexts: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 26,
+    color: COLORS.h1,
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: COLORS.h2,
+    marginTop: 2,
+  },
   addButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     backgroundColor: COLORS.link,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: COLORS.link,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
 
-  scrollContent: { padding: 24, paddingBottom: 100 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 100,
+  },
+  loadingContainer: {
+    marginTop: 100,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: COLORS.h2,
+    fontSize: 14,
+  },
 
-  card: {
+  cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 24,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: 'rgba(0,0,0,0.03)',
+    overflow: 'hidden',
+  },
+  cardContent: {
+    padding: 20,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  serviceRow: { flexDirection: 'row', alignItems: 'center' },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  titleContainer: {
+    flex: 1,
+    marginRight: 10,
   },
-  deleteBtn: { padding: 4, opacity: 0.8 },
-
-  cardTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: COLORS.text, marginBottom: 8 },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
+  cardTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: COLORS.text,
+    marginBottom: 6,
   },
-  triggerText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    color: '#888',
-    textTransform: 'capitalize',
-  },
-
   activeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#E8F5E9',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
-  activeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#4CAF50', marginRight: 6 },
-  activeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#2E7D32' },
-
-  emptyState: { alignItems: 'center', marginTop: 80, opacity: 0.6 },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F0F0F0',
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4CAF50',
+    marginRight: 6,
+  },
+  activeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: '#2E7D32',
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#FFF5F5',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
     marginBottom: 16,
   },
-  emptyText: { fontFamily: 'Inter_700Bold', fontSize: 18, color: COLORS.text },
-  emptySubtext: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#888', marginTop: 8 },
+
+  flowContainer: {
+    position: 'relative',
+    paddingLeft: 4,
+  },
+  connector: {
+    position: 'absolute',
+    left: 21,
+    top: 38,
+    bottom: 38,
+    width: 2,
+    backgroundColor: '#F0F0F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: -1,
+  },
+  flowStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 5,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.02)',
+  },
+  stepTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  stepLabel: {
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+    color: COLORS.h2,
+    opacity: 0.6,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  stepValue: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: COLORS.h1,
+    textTransform: 'capitalize',
+  },
+  stepSubValue: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: '#888',
+    marginTop: 2,
+  },
+
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 30,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter_700Bold',
+    color: COLORS.h1,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDesc: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: COLORS.h2,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 30,
+  },
+  emptyButton: {
+    backgroundColor: COLORS.link,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 30,
+    shadowColor: COLORS.link,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  emptyButtonText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+  },
 });

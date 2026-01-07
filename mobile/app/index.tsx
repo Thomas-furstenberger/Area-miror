@@ -1,32 +1,43 @@
-/*
-** EPITECH PROJECT, 2025
-** Area-miror
-** File description:
-** index
-*/
-
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, Text, View, TouchableWithoutFeedback, Keyboard, SafeAreaView } from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  Keyboard,
+  SafeAreaView,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, FONTS } from '@/constants/theme';
+import { COLORS } from '@/constants/theme';
 
 export default function ServerConfigScreen() {
   const [ip, setIp] = useState('');
   const [port, setPort] = useState('8080');
+  const [checking, setChecking] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const loadConfig = async () => {
+    const checkSession = async () => {
       const savedIp = await AsyncStorage.getItem('server_ip');
       const savedPort = await AsyncStorage.getItem('server_port');
-      
-      if (savedIp && savedPort) {
-        setIp(savedIp);
-        setPort(savedPort);
+
+      if (savedIp) setIp(savedIp);
+      if (savedPort) setPort(savedPort);
+
+      const token = await AsyncStorage.getItem('user_token');
+
+      if (token && savedIp) {
+        console.log('Token trouvé, connexion automatique...');
+        router.replace('/(tabs)/areas');
+      } else {
+        setChecking(false);
       }
     };
-    loadConfig();
+    checkSession();
   }, []);
 
   const handleSave = async () => {
@@ -35,6 +46,17 @@ export default function ServerConfigScreen() {
     await AsyncStorage.setItem('server_port', port.trim());
     router.replace('/(auth)/login');
   };
+
+  if (checking) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.link} />
+        <Text style={{ marginTop: 20, color: COLORS.h1, fontFamily: 'Inter_600SemiBold' }}>
+          Chargement...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -47,20 +69,19 @@ export default function ServerConfigScreen() {
 
           <View style={styles.card}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Adresse IP</Text>
+              <Text style={styles.label}>Adresse IP / Domaine</Text>
               <TextInput
                 style={styles.input}
-                placeholder="192.168.1.15"
+                placeholder="Ex: 192.168.1.15 ou mon-ngrok.app"
                 placeholderTextColor="#9CA3AF"
                 value={ip}
                 onChangeText={setIp}
-                keyboardType="numbers-and-punctuation"
                 autoCapitalize="none"
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Port</Text>
+              <Text style={styles.label}>Port (Optionnel si Ngrok)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="8080"
