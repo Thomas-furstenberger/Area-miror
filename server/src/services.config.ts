@@ -241,4 +241,24 @@ export const SERVICES: ServiceConfig[] = [
       },
     ],
   },
+    {
+    name: 'youtube',
+    actions: [
+      {
+        name: 'new_video',
+        description: 'Nouvelle vidéo sur une chaîne YouTube',
+        configFields: [
+          {
+            name: 'channel_url',
+            label: 'Lien de la chaîne YouTube',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/@Squeezie',
+            required: true,
+            description: "L'URL complète de la chaîne ou le Handle (@...)",
+          },
+        ],
+      },
+    ],
+    reactions: [],
+  },
 ];

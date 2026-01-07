@@ -22,6 +22,7 @@ import { TimerAction } from './actions/timer.action';
 import { GithubAction } from './actions/github.action';
 import { DiscordReaction } from './reactions/discord.reaction';
 import { GmailService } from './reactions/gmail.reaction';
+import { YoutubeAction } from './actions/youtube.action';
 
 export class HookExecutor {
   private areaService: AreaService;
@@ -33,11 +34,13 @@ export class HookExecutor {
   private isRunning: boolean = false;
   private lastTriggeredAreas: Map<string, Date> = new Map();
   private intervalId: NodeJS.Timeout | null = null;
+  private youtubeAction: YoutubeAction;
 
   constructor(private prisma: PrismaClient) {
     this.areaService = new AreaService(prisma);
     this.gmailAction = new GmailAction(prisma);
     this.timerAction = new TimerAction();
+    this.youtubeAction = new YoutubeAction(prisma);
     this.githubAction = new GithubAction(prisma);
     this.discordReaction = new DiscordReaction();
     this.gmailService = new GmailService(prisma);
@@ -97,6 +100,12 @@ export class HookExecutor {
         area.actionConfig,
         area.lastTriggered
       );
+    } else if (area.actionService === 'youtube' && area.actionType === 'new_video') {
+      triggered = await this.youtubeAction.checkNewVideo(
+        area.userId,
+        area.actionConfig as { channel_url: string },
+        area.lastTriggered
+      );
     } else if (area.actionService === 'github' && area.actionType === 'new_commit') {
       triggered = await this.githubAction.checkNewCommit(
         area.userId,
@@ -113,7 +122,7 @@ export class HookExecutor {
       } else if (area.actionType === 'day_of_week') {
         triggered = this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
       }
-    }
+    } 
 
     if (!triggered) {
       return;
