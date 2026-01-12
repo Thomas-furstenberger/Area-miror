@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Settings,
   ChevronRight,
+  Youtube,
+  Cloud,
 } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -53,6 +55,8 @@ const serviceIcons: Record<string, React.ReactNode> = {
   gmail: <Mail className="w-5 h-5" />,
   timer: <Clock className="w-5 h-5" />,
   discord: <MessageSquare className="w-5 h-5" />,
+  youtube: <Youtube className="w-5 h-5" />,
+  weather: <Cloud className="w-5 h-5" />,
 };
 
 // Service colors mapping
@@ -83,6 +87,18 @@ const serviceColors: Record<
     text: 'text-white',
     border: 'border-indigo-400',
     gradient: 'from-indigo-500 to-indigo-600',
+  },
+  youtube: {
+    bg: 'bg-red-600',
+    text: 'text-white',
+    border: 'border-red-500',
+    gradient: 'from-red-600 to-red-700',
+  },
+  weather: {
+    bg: 'bg-sky-500',
+    text: 'text-white',
+    border: 'border-sky-400',
+    gradient: 'from-sky-500 to-blue-500',
   },
 };
 

@@ -113,4 +113,29 @@ export class GmailService {
 
     return response.json();
   }
+
+  async markAsRead(userId: number, messageId: string) {
+    const token = await this.getValidToken(userId);
+
+    const response = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/modify`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          removeLabelIds: ['UNREAD'],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erreur marquage email comme lu: ${await response.text()}`);
+    }
+
+    console.log(`[Gmail] Email ${messageId} marqué comme lu`);
+    return response.json();
+  }
 }

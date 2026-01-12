@@ -23,6 +23,10 @@ import { GithubAction } from './actions/github.action';
 import { DiscordReaction } from './reactions/discord.reaction';
 import { GmailService } from './reactions/gmail.reaction';
 import { YoutubeAction } from './actions/youtube.action';
+import { WeatherAction } from './actions/weather.action';
+import { WeatherReaction } from './reactions/weather.reaction';
+import { DiscordAction } from './actions/discord.action';
+import { YoutubeReaction } from './reactions/youtube.reaction';
 
 export class HookExecutor {
   private areaService: AreaService;
@@ -35,6 +39,10 @@ export class HookExecutor {
   private lastTriggeredAreas: Map<string, Date> = new Map();
   private intervalId: NodeJS.Timeout | null = null;
   private youtubeAction: YoutubeAction;
+  private weatherAction: WeatherAction;
+  private weatherReaction: WeatherReaction;
+  private discordAction: DiscordAction;
+  private youtubeReaction: YoutubeReaction;
 
   constructor(private prisma: PrismaClient) {
     this.areaService = new AreaService(prisma);
@@ -44,6 +52,10 @@ export class HookExecutor {
     this.githubAction = new GithubAction(prisma);
     this.discordReaction = new DiscordReaction();
     this.gmailService = new GmailService(prisma);
+    this.weatherAction = new WeatherAction();
+    this.weatherReaction = new WeatherReaction();
+    this.discordAction = new DiscordAction(prisma);
+    this.youtubeReaction = new YoutubeReaction(prisma);
   }
 
   async execute() {
@@ -106,12 +118,40 @@ export class HookExecutor {
         area.actionConfig as { channel_url: string },
         area.lastTriggered
       );
-    } else if (area.actionService === 'github' && area.actionType === 'new_commit') {
-      triggered = await this.githubAction.checkNewCommit(
-        area.userId,
-        area.actionConfig as { repo_owner: string; repo_name: string },
-        area.lastTriggered
-      );
+    } else if (area.actionService === 'github') {
+      if (area.actionType === 'new_commit') {
+        triggered = await this.githubAction.checkNewCommit(
+          area.userId,
+          area.actionConfig as { repo_owner: string; repo_name: string },
+          area.lastTriggered
+        );
+      } else if (area.actionType === 'new_issue') {
+        triggered = await this.githubAction.checkNewIssue(
+          area.userId,
+          area.actionConfig as { repo_owner: string; repo_name: string },
+          area.lastTriggered
+        );
+      } else if (area.actionType === 'new_star') {
+        triggered = await this.githubAction.checkNewStar(
+          area.userId,
+          area.actionConfig as { repo_owner: string; repo_name: string },
+          area.lastTriggered
+        );
+      }
+    } else if (area.actionService === 'discord') {
+      if (area.actionType === 'message_received') {
+        triggered = await this.discordAction.checkMessageReceived(
+          area.userId,
+          area.actionConfig as { webhook_url: string; guild_id?: string; channel_id?: string },
+          area.lastTriggered
+        );
+      } else if (area.actionType === 'user_joined') {
+        triggered = await this.discordAction.checkUserJoined(
+          area.userId,
+          area.actionConfig as { guild_id: string },
+          area.lastTriggered
+        );
+      }
     } else if (area.actionService === 'timer') {
       if (area.actionType === 'time_reached') {
         triggered = this.timerAction.checkTimeReached(
@@ -121,6 +161,23 @@ export class HookExecutor {
         triggered = this.timerAction.checkDateReached(area.actionConfig as { date: string });
       } else if (area.actionType === 'day_of_week') {
         triggered = this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
+      }
+    } else if (area.actionService === 'weather') {
+      if (area.actionType === 'temperature_above') {
+        triggered = await this.weatherAction.checkTemperatureAbove(
+          area.actionConfig as { city: string; temperature: number },
+          area.lastTriggered
+        );
+      } else if (area.actionType === 'temperature_below') {
+        triggered = await this.weatherAction.checkTemperatureBelow(
+          area.actionConfig as { city: string; temperature: number },
+          area.lastTriggered
+        );
+      } else if (area.actionType === 'weather_condition') {
+        triggered = await this.weatherAction.checkWeatherCondition(
+          area.actionConfig as { city: string; condition: string },
+          area.lastTriggered
+        );
       }
     }
 
@@ -157,27 +214,70 @@ export class HookExecutor {
       }
 
       await this.discordReaction.sendMessage(webhookUrl, message);
-    } else if (area.reactionService === 'gmail' && area.reactionType === 'send_email') {
-      const { to, subject, body } = area.reactionConfig as {
-        to: string;
-        subject: string;
-        body: string;
+    } else if (area.reactionService === 'github') {
+      if (area.reactionType === 'create_issue') {
+        const config = area.reactionConfig as {
+          repo_owner: string;
+          repo_name: string;
+          title: string;
+          body: string;
+        };
+        await this.githubAction.createIssue(area.userId, config);
+      } else if (area.reactionType === 'add_comment') {
+        const config = area.reactionConfig as {
+          repo_owner: string;
+          repo_name: string;
+          issue_number: number;
+          comment: string;
+        };
+        await this.githubAction.addComment(area.userId, config);
+      }
+    } else if (area.reactionService === 'gmail') {
+      if (area.reactionType === 'send_email') {
+        const { to, subject, body } = area.reactionConfig as {
+          to: string;
+          subject: string;
+          body: string;
+        };
+
+        if (!to || !subject || !body) {
+          console.error(`[Hook Executor] Missing email configuration for area ${area.id}`);
+          return;
+        }
+
+        await this.gmailService.sendEmail(area.userId, to, subject, body);
+      } else if (area.reactionType === 'mark_as_read') {
+        const config = area.reactionConfig as { messageId: string };
+        await this.gmailService.markAsRead(area.userId, config.messageId);
+      }
+    } else if (area.reactionService === 'youtube' && area.reactionType === 'add_to_playlist') {
+      const config = area.reactionConfig as { playlist_id: string; video_id: string };
+      await this.youtubeReaction.addToPlaylist(area.userId, config);
+    } else if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
+      const config = area.reactionConfig as {
+        city: string;
+        destination: string;
+        discord_webhook?: string;
+        email_to?: string;
       };
 
-      if (!to || !subject || !body) {
-        console.error(`[Hook Executor] Missing email configuration for area ${area.id}`);
+      const weatherInfo = await this.weatherReaction.getDetailedWeather(config.city);
+
+      if (!weatherInfo) {
+        console.error(`[Hook Executor] Failed to get weather info for ${config.city}`);
         return;
       }
 
-      await this.gmailService.sendEmail(area.userId, to, subject, body);
-    } else if (area.reactionService === 'github' && area.reactionType === 'create_issue') {
-      const config = area.reactionConfig as {
-        repo_owner: string;
-        repo_name: string;
-        title: string;
-        body: string;
-      };
-      await this.githubAction.createIssue(area.userId, config);
+      if (config.destination === 'discord' && config.discord_webhook) {
+        await this.discordReaction.sendMessage(config.discord_webhook, weatherInfo);
+      } else if (config.destination === 'gmail' && config.email_to) {
+        await this.gmailService.sendEmail(
+          area.userId,
+          config.email_to,
+          `Météo à ${config.city}`,
+          weatherInfo
+        );
+      }
     }
 
     await this.areaService.updateLastTriggered(area.id);

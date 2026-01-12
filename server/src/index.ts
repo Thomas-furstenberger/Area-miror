@@ -205,7 +205,11 @@ fastify.get('/api/auth/github', async (request, _reply) => {
   const redirectUri = process.env.GITHUB_CALLBACK_URL;
   const scope = 'user:email,read:user';
 
-  let authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+  if (!clientId || !redirectUri) {
+    return _reply.status(500).send({ error: 'Configuration GitHub manquante' });
+  }
+
+  let authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
 
   if (redirectState) {
     authUrl += `&state=${encodeURIComponent(redirectState)}`;
@@ -256,7 +260,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
       avatar_url: string;
     };
 
-    let finalRedirectUrl = process.env.FRONTEND_URL || 'http://localhost:8081';
+    let finalRedirectUrl = (process.env.FRONTEND_URL || 'http://localhost:8081') + '/login/success';
     let sessionTokenToLink = null;
 
     const userAgent = request.headers['user-agent']?.toLowerCase() || '';
@@ -318,7 +322,7 @@ fastify.get('/api/auth/github/callback', async (request, _reply) => {
     const separator = finalRedirectUrl.includes('?') ? '&' : '?';
 
     return _reply.redirect(
-      `${finalRedirectUrl}${separator}token=${encodeURIComponent(finalSessionToken)}`
+      `${finalRedirectUrl}${separator}token=${encodeURIComponent(finalSessionToken)}&service=github&connected=true`
     );
   } catch (error) {
     fastify.log.error(error);
@@ -381,7 +385,7 @@ fastify.get('/api/auth/discord/callback', async (request, _reply) => {
       avatar: string | null;
     };
 
-    let finalRedirectUrl = process.env.FRONTEND_URL || 'http://localhost:8081';
+    let finalRedirectUrl = (process.env.FRONTEND_URL || 'http://localhost:8081') + '/login/success';
     let sessionTokenToLink = null;
 
     const userAgent = request.headers['user-agent']?.toLowerCase() || '';
@@ -516,7 +520,7 @@ fastify.get('/api/auth/gmail/callback', async (request, _reply) => {
       picture: string;
     };
 
-    let finalRedirectUrl = process.env.FRONTEND_URL || 'http://localhost:8081';
+    let finalRedirectUrl = (process.env.FRONTEND_URL || 'http://localhost:8081') + '/login/success';
     let sessionTokenToLink = null;
 
     const userAgent = request.headers['user-agent']?.toLowerCase() || '';
@@ -792,13 +796,13 @@ fastify.get('/api/github/repos', async (request, _reply) => {
     }>;
     const formattedRepos = Array.isArray(repos)
       ? repos.map((repo) => ({
-          id: repo.id,
-          name: repo.name,
-          fullName: repo.full_name,
-          private: repo.private,
-          htmlUrl: repo.html_url,
-          description: repo.description,
-        }))
+        id: repo.id,
+        name: repo.name,
+        fullName: repo.full_name,
+        private: repo.private,
+        htmlUrl: repo.html_url,
+        description: repo.description,
+      }))
       : [];
     return { success: true, repositories: formattedRepos };
   } catch (error) {

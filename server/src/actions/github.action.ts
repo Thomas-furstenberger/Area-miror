@@ -47,6 +47,90 @@ export class GithubAction {
     }
   }
 
+  async checkNewIssue(
+    userId: number,
+    config: { repo_owner: string; repo_name: string },
+    lastTriggered: Date | null
+  ): Promise<boolean> {
+    try {
+      const account = await this.prisma.oAuthAccount.findFirst({
+        where: { userId, provider: 'GITHUB' },
+      });
+
+      if (!account || !account.accessToken) {
+        console.error(`[GitHub] Pas de compte connecté pour user ${userId}`);
+        return false;
+      }
+
+      const url = `https://api.github.com/repos/${config.repo_owner}/${config.repo_name}/issues?per_page=1&state=all&sort=created&direction=desc`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${account.accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'Area-App',
+        },
+      });
+
+      if (!response.ok) return false;
+      const issues = (await response.json()) as Array<{ created_at: string }>;
+
+      if (!issues || issues.length === 0) return false;
+
+      const latestIssueDate = new Date(issues[0].created_at);
+
+      if (!lastTriggered) {
+        return false;
+      }
+
+      return latestIssueDate.getTime() > lastTriggered.getTime();
+    } catch (e) {
+      console.error('[GitHub Action Error]', e);
+      return false;
+    }
+  }
+
+  async checkNewStar(
+    userId: number,
+    config: { repo_owner: string; repo_name: string },
+    lastTriggered: Date | null
+  ): Promise<boolean> {
+    try {
+      const account = await this.prisma.oAuthAccount.findFirst({
+        where: { userId, provider: 'GITHUB' },
+      });
+
+      if (!account || !account.accessToken) {
+        console.error(`[GitHub] Pas de compte connecté pour user ${userId}`);
+        return false;
+      }
+
+      const url = `https://api.github.com/repos/${config.repo_owner}/${config.repo_name}/stargazers?per_page=1`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${account.accessToken}`,
+          Accept: 'application/vnd.github.v3.star+json',
+          'User-Agent': 'Area-App',
+        },
+      });
+
+      if (!response.ok) return false;
+      const stars = (await response.json()) as Array<{ starred_at: string }>;
+
+      if (!stars || stars.length === 0) return false;
+
+      const latestStarDate = new Date(stars[0].starred_at);
+
+      if (!lastTriggered) {
+        return false;
+      }
+
+      return latestStarDate.getTime() > lastTriggered.getTime();
+    } catch (e) {
+      console.error('[GitHub Action Error]', e);
+      return false;
+    }
+  }
+
   async createIssue(
     userId: number,
     config: { repo_owner: string; repo_name: string; title: string; body: string }
@@ -71,6 +155,39 @@ export class GithubAction {
         }),
       });
       console.log(`[GitHub] Issue créée sur ${config.repo_owner}/${config.repo_name}`);
+    } catch (e) {
+      console.error('[GitHub Reaction Error]', e);
+    }
+  }
+
+  async addComment(
+    userId: number,
+    config: { repo_owner: string; repo_name: string; issue_number: number; comment: string }
+  ) {
+    try {
+      const account = await this.prisma.oAuthAccount.findFirst({
+        where: { userId, provider: 'GITHUB' },
+      });
+
+      if (!account || !account.accessToken) return;
+
+      await fetch(
+        `https://api.github.com/repos/${config.repo_owner}/${config.repo_name}/issues/${config.issue_number}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${account.accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Area-App',
+          },
+          body: JSON.stringify({
+            body: config.comment,
+          }),
+        }
+      );
+      console.log(
+        `[GitHub] Commentaire ajouté à l'issue #${config.issue_number} sur ${config.repo_owner}/${config.repo_name}`
+      );
     } catch (e) {
       console.error('[GitHub Reaction Error]', e);
     }
