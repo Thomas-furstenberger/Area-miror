@@ -148,7 +148,7 @@ export const SERVICES: ServiceConfig[] = [
           },
           {
             name: 'issue_number',
-            label: 'Numéro de l\'issue',
+            label: "Numéro de l'issue",
             type: 'number',
             placeholder: '42',
             required: true,
@@ -436,7 +436,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'temperature_below',
-        description: 'La température passe en dessous d\'un seuil',
+        description: "La température passe en dessous d'un seuil",
         configFields: [
           {
             name: 'city',
@@ -490,7 +490,7 @@ export const SERVICES: ServiceConfig[] = [
     reactions: [
       {
         name: 'send_weather_info',
-        description: 'Envoyer les informations météo détaillées d\'une ville',
+        description: "Envoyer les informations météo détaillées d'une ville",
         configFields: [
           {
             name: 'city',

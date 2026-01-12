@@ -37,7 +37,10 @@ export class YoutubeReaction {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[YouTube Reaction] Erreur ajout à playlist (${response.status}):`, errorText);
+        console.error(
+          `[YouTube Reaction] Erreur ajout à playlist (${response.status}):`,
+          errorText
+        );
         return false;
       }
 

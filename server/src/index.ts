@@ -796,13 +796,13 @@ fastify.get('/api/github/repos', async (request, _reply) => {
     }>;
     const formattedRepos = Array.isArray(repos)
       ? repos.map((repo) => ({
-        id: repo.id,
-        name: repo.name,
-        fullName: repo.full_name,
-        private: repo.private,
-        htmlUrl: repo.html_url,
-        description: repo.description,
-      }))
+          id: repo.id,
+          name: repo.name,
+          fullName: repo.full_name,
+          private: repo.private,
+          htmlUrl: repo.html_url,
+          description: repo.description,
+        }))
       : [];
     return { success: true, repositories: formattedRepos };
   } catch (error) {
