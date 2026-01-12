@@ -283,6 +283,14 @@ export class HookExecutor {
           weatherInfo
         );
       }
+    } else if (area.reactionService === 'youtube' && area.reactionType === 'like_video') {
+      const config = area.reactionConfig as { video_url: string };
+
+      if (!config.video_url) {
+        return;
+      }
+
+      await this.youtubeReaction.likeVideo(area.userId, config.video_url);
     }
 
     await this.areaService.updateLastTriggered(area.id);
