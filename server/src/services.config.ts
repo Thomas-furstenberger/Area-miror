@@ -407,6 +407,20 @@ export const SERVICES: ServiceConfig[] = [
           },
         ],
       },
+      {
+        name: 'like_video',
+        description: 'Like a video on YouTube',
+        configFields: [
+          {
+            name: 'video_url',
+            label: 'Lien de la vidéo',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/watch?v=...',
+            required: true,
+            description: "L'URL de la vidéo à liker",
+          },
+        ],
+      },
     ],
   },
   {

@@ -465,6 +465,7 @@ fastify.get('/api/auth/gmail', async (request, _reply) => {
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/youtube.readonly',
+    'https://www.googleapis.com/auth/youtube.force-ssl',
   ];
   const scope = encodeURIComponent(scopes.join(' '));
 

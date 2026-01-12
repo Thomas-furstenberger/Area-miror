@@ -51,4 +51,36 @@ export class YoutubeReaction {
       return false;
     }
   }
+
+  async likeVideo(userId: number, videoUrl: string) {
+    const accessToken = await this.gmailService.getValidToken(userId);
+
+    const videoId = this.extractVideoId(videoUrl);
+    if (!videoId) {
+      throw new Error(`URL de vidéo invalide : ${videoUrl}`);
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos/rate?id=${videoId}&rating=like`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Length': '0',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Erreur YouTube API (${response.status}): ${errorText}`);
+    }
+
+    console.log(`[YouTube Reaction] Vidéo ${videoId} likée avec succès !`);
+  }
+
+  private extractVideoId(url: string): string | null {
+    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+    return match ? match[1] : null;
+  }
 }
