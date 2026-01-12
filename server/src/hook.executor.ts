@@ -94,13 +94,17 @@ export class HookExecutor {
         `[Hook Executor] Init: Initialisation de la date de référence pour l'area ${area.name}`
       );
       await this.areaService.updateLastTriggered(area.id);
-      return;
+
+      if (area.actionService !== 'timer') {
+        return;
+      }
     }
 
     const lastTriggered = this.lastTriggeredAreas.get(area.id);
     const now = new Date();
 
-    if (lastTriggered && now.getTime() - lastTriggered.getTime() < 60000) {
+    // Protection contre les déclenchements multiples : 15 secondes minimum entre chaque
+    if (lastTriggered && now.getTime() - lastTriggered.getTime() < 15000) {
       return;
     }
 
@@ -154,13 +158,14 @@ export class HookExecutor {
       }
     } else if (area.actionService === 'timer') {
       if (area.actionType === 'time_reached') {
-        triggered = this.timerAction.checkTimeReached(
-          area.actionConfig as { hour: number; minute: number }
+        triggered = await this.timerAction.checkTimeReached(
+          area.actionConfig as { hour: number; minute: number },
+          area.lastTriggered
         );
       } else if (area.actionType === 'date_reached') {
-        triggered = this.timerAction.checkDateReached(area.actionConfig as { date: string });
+        triggered = await this.timerAction.checkDateReached(area.actionConfig as { date: string });
       } else if (area.actionType === 'day_of_week') {
-        triggered = this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
+        triggered = await this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
       }
     } else if (area.actionService === 'weather') {
       if (area.actionType === 'temperature_above') {
@@ -284,7 +289,8 @@ export class HookExecutor {
   }
 
   start(intervalMinutes: number = 2) {
-    console.log(`[Hook Executor] Starting with ${intervalMinutes} minute interval`);
+    const intervalSeconds = intervalMinutes * 60;
+    console.log(`[Hook Executor] Starting with ${intervalSeconds} second interval (${intervalMinutes} minutes)`);
 
     this.execute();
 
@@ -292,7 +298,20 @@ export class HookExecutor {
       () => {
         this.execute();
       },
-      intervalMinutes * 60 * 1000
+      intervalSeconds * 1000
+    );
+  }
+
+  startWithSeconds(intervalSeconds: number = 15) {
+    console.log(`[Hook Executor] Starting with ${intervalSeconds} second interval`);
+
+    this.execute();
+
+    this.intervalId = setInterval(
+      () => {
+        this.execute();
+      },
+      intervalSeconds * 1000
     );
   }
 

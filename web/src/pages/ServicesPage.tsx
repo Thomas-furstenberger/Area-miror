@@ -10,11 +10,11 @@ import {
   Mail,
   CheckCircle,
   AlertCircle,
-  LogOut,
   Plus,
   Zap,
   Link2,
   Unlink,
+  Youtube,
 } from 'lucide-react';
 
 interface ConnectedService {
@@ -51,6 +51,15 @@ const SERVICES = [
     color: 'from-red-500 to-orange-500',
     bgColor: 'bg-red-500',
     description: 'Connectez Gmail pour gérer vos emails automatiquement',
+    authUrl: `${API_URL}/api/auth/gmail`,
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: Youtube,
+    color: 'from-red-600 to-red-700',
+    bgColor: 'bg-red-600',
+    description: 'Connectez YouTube pour suivre vos chaînes et playlists',
     authUrl: `${API_URL}/api/auth/gmail`,
   },
 ];
@@ -280,11 +289,10 @@ export default function ServicesPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       whileHover={{ y: -5 }}
-                      className={`relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
-                        isConnected
-                          ? 'border-green-300'
-                          : 'border-transparent hover:border-primary/30'
-                      }`}
+                      className={`relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${isConnected
+                        ? 'border-green-300'
+                        : 'border-transparent hover:border-primary/30'
+                        }`}
                     >
                       {/* Connected badge */}
                       {isConnected && (
@@ -356,56 +364,7 @@ export default function ServicesPage() {
                 })}
               </div>
 
-              {/* Connected Services Summary */}
-              {connectedServices.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-2xl shadow-lg p-8 mb-12"
-                >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-green-100 rounded-xl">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-text">Services connectés</h2>
-                    <span className="ml-auto px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                      {connectedServices.length} actif{connectedServices.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    {connectedServices.map((service, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-text">{service.provider}</p>
-                            {service.email && (
-                              <p className="text-sm text-secondary">{service.email}</p>
-                            )}
-                          </div>
-                        </div>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleDisconnect(service.provider)}
-                          className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Déconnecter
-                        </motion.button>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+
 
               {/* CTAs */}
               <motion.div

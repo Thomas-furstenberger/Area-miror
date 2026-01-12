@@ -796,13 +796,13 @@ fastify.get('/api/github/repos', async (request, _reply) => {
     }>;
     const formattedRepos = Array.isArray(repos)
       ? repos.map((repo) => ({
-          id: repo.id,
-          name: repo.name,
-          fullName: repo.full_name,
-          private: repo.private,
-          htmlUrl: repo.html_url,
-          description: repo.description,
-        }))
+        id: repo.id,
+        name: repo.name,
+        fullName: repo.full_name,
+        private: repo.private,
+        htmlUrl: repo.html_url,
+        description: repo.description,
+      }))
       : [];
     return { success: true, repositories: formattedRepos };
   } catch (error) {
@@ -819,7 +819,8 @@ const start = async () => {
     await fastify.listen({ port, host });
     console.log(`Server running at http://${host}:${port}`);
 
-    hookExecutor.start();
+    // Start hook executor with 15 second interval
+    hookExecutor.startWithSeconds(15);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
