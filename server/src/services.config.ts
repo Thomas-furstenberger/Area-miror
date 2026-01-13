@@ -574,7 +574,8 @@ export const SERVICES: ServiceConfig[] = [
     reactions: [
       {
         name: 'skip_track',
-        description: 'Passer au titre suivant (nécessite Spotify ouvert sur un appareil, faut Spotify Premium)',
+        description:
+          'Passer au titre suivant (nécessite Spotify ouvert sur un appareil, faut Spotify Premium)',
         configFields: [],
       },
       {
