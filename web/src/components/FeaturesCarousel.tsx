@@ -26,7 +26,6 @@ const features = [
     description:
       'Créez des automatisations complexes avec notre éditeur drag & drop intuitif. Aucune compétence technique requise.',
     gradient: 'from-blue-500 to-cyan-500',
-    image: '🔄',
   },
   {
     icon: Zap,
@@ -34,7 +33,6 @@ const features = [
     description:
       'Vos workflows se déclenchent en temps réel. Réagissez instantanément aux événements de vos applications.',
     gradient: 'from-yellow-500 to-orange-500',
-    image: '⚡',
   },
   {
     icon: Shield,
@@ -42,7 +40,6 @@ const features = [
     description:
       "Chiffrement de bout en bout, conformité RGPD et audit logs complets pour une tranquillité d'esprit totale.",
     gradient: 'from-green-500 to-emerald-500',
-    image: '🛡️',
   },
   {
     icon: Clock,
@@ -50,7 +47,6 @@ const features = [
     description:
       'Programmez vos automatisations avec des déclencheurs temporels flexibles. Cron, intervalles, dates précises.',
     gradient: 'from-purple-500 to-pink-500',
-    image: '⏰',
   },
   {
     icon: Puzzle,
@@ -58,7 +54,6 @@ const features = [
     description:
       'Connectez tous vos outils favoris : GitHub, Discord, Gmail, Slack, et bien plus encore.',
     gradient: 'from-red-500 to-rose-500',
-    image: '🧩',
   },
   {
     icon: BarChart3,
@@ -66,7 +61,6 @@ const features = [
     description:
       'Suivez les performances de vos workflows avec des métriques en temps réel et des rapports personnalisés.',
     gradient: 'from-indigo-500 to-violet-500',
-    image: '📊',
   },
 ];
 
@@ -167,11 +161,6 @@ export default function FeaturesCarousel() {
                         {feature.title}
                       </h3>
                       <p className="text-text/60 leading-relaxed mb-6">{feature.description}</p>
-
-                      {/* Decorative emoji */}
-                      <div className="absolute top-6 right-6 text-5xl opacity-20 group-hover:opacity-40 transition-opacity">
-                        {feature.image}
-                      </div>
 
                       {/* Learn more link */}
                       <motion.button
