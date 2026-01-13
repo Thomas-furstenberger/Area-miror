@@ -21,6 +21,11 @@ import {
   Box,
 } from 'lucide-react';
 
+import discordLogo from '../assets/logo-discord.png';
+import spotifyLogo from '../assets/logo-spotify.png';
+import googleLogo from '../assets/logo-google.png';
+import githubLogo from '../assets/logo-github.png';
+
 interface ConnectedService {
   provider: string;
   email?: string;
@@ -75,7 +80,22 @@ export default function ServicesPage() {
       }
 
       const servicesData = await getServices();
-      setAvailableServices(servicesData);
+
+      const uniqueServices = servicesData.reduce((acc: Service[], current: Service) => {
+        const name = current.name.toLowerCase();
+        const googleSubServices = ['gmail', 'youtube', 'google', 'google_calendar'];
+
+        if (googleSubServices.includes(name)) {
+          if (!acc.some((s) => s.name === 'Google')) {
+            acc.push({ ...current, name: 'Google' });
+          }
+        } else {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+
+      setAvailableServices(uniqueServices);
 
       const response = await fetch(`${API_URL}/api/user/oauth-accounts`, {
         headers: {
@@ -103,10 +123,9 @@ export default function ServicesPage() {
       return;
     }
 
-    // Map service name to auth endpoint
     let authEndpoint = serviceName.toLowerCase();
     if (authEndpoint === 'google') {
-      authEndpoint = 'gmail'; // Google services use gmail auth endpoint
+      authEndpoint = 'gmail';
     }
 
     const authUrl = `${API_URL}/api/auth/${authEndpoint}`;
@@ -147,6 +166,7 @@ export default function ServicesPage() {
     const mapping: Record<string, string> = {
       gmail: 'GOOGLE',
       google: 'GOOGLE',
+      youtube: 'GOOGLE',
       github: 'GITHUB',
       discord: 'DISCORD',
       spotify: 'SPOTIFY',
@@ -177,6 +197,7 @@ export default function ServicesPage() {
     if (n.includes('github'))
       return {
         icon: Github,
+        logo: githubLogo,
         color: 'from-gray-700 to-gray-900',
         bgColor: 'bg-gray-800',
         description: 'Automatisez vos workflows de développement',
@@ -184,20 +205,23 @@ export default function ServicesPage() {
     if (n.includes('discord'))
       return {
         icon: MessageCircle,
+        logo: discordLogo,
         color: 'from-indigo-500 to-purple-600',
         bgColor: 'bg-indigo-600',
         description: 'Gérez votre communauté Discord',
       };
-    if (n.includes('google') || n.includes('gmail'))
+    if (n.includes('google') || n.includes('gmail') || n.includes('youtube'))
       return {
         icon: Mail,
+        logo: googleLogo,
         color: 'from-red-500 to-yellow-500',
-        bgColor: 'bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500',
+        bgColor: 'bg-white',
         description: 'Gmail, YouTube et services Google',
       };
     if (n.includes('spotify'))
       return {
         icon: Music,
+        logo: spotifyLogo,
         color: 'from-green-400 to-green-600',
         bgColor: 'bg-green-500',
         description: 'Contrôlez votre musique',
@@ -205,6 +229,7 @@ export default function ServicesPage() {
     if (n.includes('weather') || n.includes('meteo'))
       return {
         icon: Cloud,
+        logo: null,
         color: 'from-blue-400 to-blue-600',
         bgColor: 'bg-blue-500',
         description: 'Réagissez aux conditions météo',
@@ -212,6 +237,7 @@ export default function ServicesPage() {
     if (n.includes('timer') || n.includes('clock') || n.includes('time'))
       return {
         icon: Clock,
+        logo: null,
         color: 'from-gray-500 to-gray-700',
         bgColor: 'bg-gray-600',
         description: 'Déclencheurs temporels et planifiés',
@@ -219,6 +245,7 @@ export default function ServicesPage() {
 
     return {
       icon: Box,
+      logo: null,
       color: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-500',
       description: `Intégration avec ${name}`,
@@ -348,9 +375,17 @@ export default function ServicesPage() {
                         <div className="absolute inset-0 bg-black/10" />
                         <div className="absolute bottom-0 left-6 transform translate-y-1/2">
                           <div
-                            className={`w-16 h-16 ${config.bgColor} rounded-xl shadow-lg flex items-center justify-center`}
+                            className={`w-16 h-16 ${config.bgColor} rounded-xl shadow-lg flex items-center justify-center overflow-hidden`}
                           >
-                            <Icon className="w-8 h-8 text-white" />
+                            {config.logo ? (
+                              <img
+                                src={config.logo}
+                                alt={service.name}
+                                className="w-full h-full object-cover p-2"
+                              />
+                            ) : (
+                              <Icon className="w-8 h-8 text-white" />
+                            )}
                           </div>
                         </div>
                       </div>
