@@ -7,7 +7,7 @@ import { API_URL } from '../config';
 import {
   Github,
   MessageCircle,
-  Mail,
+  Globe,
   CheckCircle,
   AlertCircle,
   Plus,
@@ -44,9 +44,9 @@ const SERVICES = [
     authUrl: `${API_URL}/api/auth/discord`,
   },
   {
-    id: 'gmail',
+    id: 'google',
     name: 'Google',
-    icon: Mail,
+    icon: Globe,
     color: 'from-red-500 to-orange-500',
     bgColor: 'bg-red-500',
     description: 'Connectez Google pour gérer vos emails et accéder à vos services',
@@ -163,7 +163,7 @@ export default function ServicesPage() {
   // Map frontend service IDs to backend provider names
   const getProviderName = (serviceId: string): string => {
     const mapping: Record<string, string> = {
-      gmail: 'GOOGLE',
+      google: 'GOOGLE',
       github: 'GITHUB',
       discord: 'DISCORD',
     };

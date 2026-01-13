@@ -277,13 +277,28 @@ export class HookExecutor {
 
       if (config.destination === 'discord' && config.discord_webhook) {
         await this.discordReaction.sendMessage(config.discord_webhook, weatherInfo);
-      } else if (config.destination === 'gmail' && config.email_to) {
-        await this.gmailService.sendEmail(
-          area.userId,
-          config.email_to,
-          `Météo à ${config.city}`,
-          weatherInfo
-        );
+      } else if (config.destination === 'gmail') {
+        // Si email_to n'est pas spécifié, récupérer l'email de l'utilisateur
+        let emailTo = config.email_to;
+
+        if (!emailTo) {
+          const user = await this.prisma.user.findUnique({
+            where: { id: area.userId },
+            select: { email: true }
+          });
+          emailTo = user?.email;
+        }
+
+        if (emailTo) {
+          await this.gmailService.sendEmail(
+            area.userId,
+            emailTo,
+            `Météo à ${config.city}`,
+            weatherInfo
+          );
+        } else {
+          console.error(`[Hook Executor] No email found for user ${area.userId}`);
+        }
       }
     } else if (area.reactionService === 'youtube' && area.reactionType === 'like_video') {
       const config = area.reactionConfig as { video_url: string };

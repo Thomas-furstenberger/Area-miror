@@ -18,9 +18,9 @@ model User {
   updatedAt     DateTime       @updatedAt
   githubId      Int?           @unique
   githubLogin   String?        @unique
+  areas         Area[]
   oauthAccounts OAuthAccount[]
   sessions      Session[]
-  areas         Area[]
 
   @@map("users")
 }
@@ -33,11 +33,11 @@ model OAuthAccount {
   accessToken       String?
   refreshToken      String?
   expiresAt         DateTime?
-  email             String?
-  name              String?
-  avatarUrl         String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  avatarUrl         String?
+  email             String?
+  name              String?
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -56,25 +56,21 @@ model Session {
 }
 
 model Area {
-  id          String   @id @default(cuid())
-  userId      Int
-  name        String
-  description String?
-  active      Boolean  @default(true)
-
+  id              String    @id @default(cuid())
+  userId          Int
+  name            String
+  description     String?
+  active          Boolean   @default(true)
   actionService   String
   actionType      String
   actionConfig    Json?
-
   reactionService String
   reactionType    String
   reactionConfig  Json?
-
-  lastTriggered DateTime?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastTriggered   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("areas")
 }

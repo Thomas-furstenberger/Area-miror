@@ -386,28 +386,6 @@ export const SERVICES: ServiceConfig[] = [
     ],
     reactions: [
       {
-        name: 'add_to_playlist',
-        description: 'Ajouter une vidéo à une playlist YouTube',
-        configFields: [
-          {
-            name: 'video_url',
-            label: 'URL de la vidéo',
-            type: 'url',
-            placeholder: 'https://www.youtube.com/watch?v=...',
-            required: true,
-            description: 'URL complète de la vidéo YouTube',
-          },
-          {
-            name: 'playlist_id',
-            label: 'ID de la playlist',
-            type: 'text',
-            placeholder: 'PLxxx...',
-            required: true,
-            description: 'ID de la playlist YouTube',
-          },
-        ],
-      },
-      {
         name: 'like_video',
         description: 'Like a video on YouTube',
         configFields: [
