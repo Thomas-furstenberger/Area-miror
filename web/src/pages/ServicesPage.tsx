@@ -14,6 +14,7 @@ import {
   Zap,
   Link2,
   Unlink,
+  Twitter,
 } from 'lucide-react';
 
 interface ConnectedService {
@@ -49,8 +50,18 @@ const SERVICES = [
     icon: Mail,
     color: 'from-red-500 to-orange-500',
     bgColor: 'bg-red-500',
-    description: 'Connectez Google pour gérer vos emails et accéder à vos services',
+    description:
+      'Connectez Google pour gérer vos emails et accéder à vos services (ex: Gmail, YouTube)',
     authUrl: `${API_URL}/api/auth/gmail`,
+  },
+  {
+    id: 'twitter',
+    name: 'X (Twitter)',
+    icon: Twitter,
+    color: 'from-gray-700 to-black',
+    bgColor: 'bg-black',
+    description: 'Connectez X pour poster des tweets et gérer vos interactions automatiquement.',
+    authUrl: `${API_URL}/api/auth/twitter`,
   },
 ];
 
