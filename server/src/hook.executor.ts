@@ -30,7 +30,6 @@ import { DiscordAction } from './actions/discord.action';
 import { YoutubeReaction } from './reactions/youtube.reaction';
 import { SpotifyAction } from './actions/spotify.action';
 import { SpotifyService } from './reactions/spotify.reaction';
-import { cons } from 'effect/List';
 
 export class HookExecutor {
   private areaService: AreaService;
@@ -297,11 +296,14 @@ export class HookExecutor {
             `[Hook Executor] Config invalide pour youtube post_comment (area ${area.id})`
           );
         }
+      } else if (area.reactionType === 'add_to_playlist') {
+        const config = area.reactionConfig as { playlist_id: string; video_id: string };
+        await this.youtubeReaction.addToPlaylist(area.userId, config);
       }
-    } else if (area.reactionService === 'Google' && area.reactionType === 'add_to_playlist') {
-      const config = area.reactionConfig as { playlist_id: string; video_id: string };
-      await this.youtubeReaction.addToPlaylist(area.userId, config);
-    } else if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
+    }
+
+    // Weather reaction
+    if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
       const config = area.reactionConfig as {
         city: string;
         destination: string;
