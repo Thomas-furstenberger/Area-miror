@@ -165,11 +165,11 @@ export const SERVICES: ServiceConfig[] = [
     ],
   },
   {
-    name: 'gmail',
+    name: 'Google',
     actions: [
       {
         name: 'email_received',
-        description: 'Un nouvel email est reçu',
+        description: 'Un nouvel email est reçu (Gmail)',
         configFields: [
           {
             name: 'from',
@@ -189,11 +189,25 @@ export const SERVICES: ServiceConfig[] = [
           },
         ],
       },
+      {
+        name: 'new_video',
+        description: 'Nouvelle vidéo sur une chaîne YouTube',
+        configFields: [
+          {
+            name: 'channel_url',
+            label: 'Lien de la chaîne YouTube',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/@Squeezie',
+            required: true,
+            description: "L'URL complète de la chaîne ou le Handle (@...)",
+          },
+        ],
+      },
     ],
     reactions: [
       {
         name: 'send_email',
-        description: 'Envoyer un email',
+        description: 'Envoyer un email (Gmail)',
         configFields: [
           {
             name: 'to',
@@ -220,7 +234,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'mark_as_read',
-        description: 'Marquer un email comme lu',
+        description: 'Marquer un email comme lu (Gmail)',
         configFields: [
           {
             name: 'from',
@@ -232,30 +246,9 @@ export const SERVICES: ServiceConfig[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    name: 'youtube',
-    actions: [
-      {
-        name: 'new_video',
-        description: 'Nouvelle vidéo sur une chaîne YouTube',
-        configFields: [
-          {
-            name: 'channel_url',
-            label: 'Lien de la chaîne YouTube',
-            type: 'url',
-            placeholder: 'https://www.youtube.com/@Squeezie',
-            required: true,
-            description: "L'URL complète de la chaîne ou le Handle (@...)",
-          },
-        ],
-      },
-    ],
-    reactions: [
       {
         name: 'add_to_playlist',
-        description: 'Ajouter une vidéo à une playlist',
+        description: 'Ajouter une vidéo à une playlist (YouTube)',
         configFields: [
           {
             name: 'video_url',
@@ -277,7 +270,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'like_video',
-        description: 'Liker une vidéo',
+        description: 'Liker une vidéo (YouTube)',
         configFields: [
           {
             name: 'video_url',
@@ -291,7 +284,7 @@ export const SERVICES: ServiceConfig[] = [
       },
       {
         name: 'post_comment',
-        description: 'Poster un commentaire',
+        description: 'Poster un commentaire (YouTube)',
         configFields: [
           {
             name: 'url',
