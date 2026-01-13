@@ -112,8 +112,8 @@ jobs:
           file: ./server/Dockerfile
           push: false
           tags: area-server:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
       - name: Build Web Image
         uses: docker/build-push-action@v5
@@ -122,8 +122,8 @@ jobs:
           file: ./web/Dockerfile
           push: false
           tags: area-web:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   # ============================================
   # 📱 Build Mobile APK
