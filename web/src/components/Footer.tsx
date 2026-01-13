@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Github, Twitter, Linkedin, Mail, ArrowRight, Heart } from 'lucide-react';
+import { Github, Twitter, Linkedin, Mail, ArrowRight } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -209,9 +209,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="py-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-background/50">© {currentYear} AREA. Tous droits réservés.</p>
-          <p className="flex items-center gap-2 text-sm text-background/50">
-            Fait avec <Heart className="w-4 h-4 text-red-500 fill-red-500" /> par l'équipe AREA
-          </p>
+          <p className="flex items-center gap-2 text-sm text-background/50"></p>
         </div>
       </div>
     </footer>

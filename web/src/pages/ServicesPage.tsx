@@ -103,7 +103,13 @@ export default function ServicesPage() {
       return;
     }
 
-    const authUrl = `${API_URL}/api/auth/${serviceName.toLowerCase()}`;
+    // Map service name to auth endpoint
+    let authEndpoint = serviceName.toLowerCase();
+    if (authEndpoint === 'google') {
+      authEndpoint = 'gmail'; // Google services use gmail auth endpoint
+    }
+
+    const authUrl = `${API_URL}/api/auth/${authEndpoint}`;
 
     const state = JSON.stringify({
       userToken: token,
@@ -185,9 +191,9 @@ export default function ServicesPage() {
     if (n.includes('google') || n.includes('gmail'))
       return {
         icon: Mail,
-        color: 'from-red-500 to-orange-500',
-        bgColor: 'bg-red-500',
-        description: 'Gérez vos emails et services Google',
+        color: 'from-red-500 to-yellow-500',
+        bgColor: 'bg-gradient-to-br from-blue-500 via-red-500 to-yellow-500',
+        description: 'Gmail, YouTube et services Google',
       };
     if (n.includes('spotify'))
       return {
