@@ -83,6 +83,7 @@ export default function Navbar() {
               { name: 'Intégrations', href: '/integrations' },
               { name: 'Tarifs', href: '/pricing' },
               { name: 'Ressources', href: '/resources' },
+              { name: 'Contact', href: '/contact' },
             ].map((item) => (
               <Link
                 key={item.name}
