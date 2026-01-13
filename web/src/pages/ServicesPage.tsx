@@ -14,7 +14,6 @@ import {
   Zap,
   Link2,
   Unlink,
-  Youtube,
 } from 'lucide-react';
 
 interface ConnectedService {
@@ -46,20 +45,11 @@ const SERVICES = [
   },
   {
     id: 'gmail',
-    name: 'Gmail',
+    name: 'Google',
     icon: Mail,
     color: 'from-red-500 to-orange-500',
     bgColor: 'bg-red-500',
-    description: 'Connectez Gmail pour gérer vos emails automatiquement',
-    authUrl: `${API_URL}/api/auth/gmail`,
-  },
-  {
-    id: 'youtube',
-    name: 'YouTube',
-    icon: Youtube,
-    color: 'from-red-600 to-red-700',
-    bgColor: 'bg-red-600',
-    description: 'Connectez YouTube pour suivre vos chaînes et playlists',
+    description: 'Connectez Google pour gérer vos emails et accéder à vos services',
     authUrl: `${API_URL}/api/auth/gmail`,
   },
 ];
@@ -289,10 +279,11 @@ export default function ServicesPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       whileHover={{ y: -5 }}
-                      className={`relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${isConnected
-                        ? 'border-green-300'
-                        : 'border-transparent hover:border-primary/30'
-                        }`}
+                      className={`relative bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
+                        isConnected
+                          ? 'border-green-300'
+                          : 'border-transparent hover:border-primary/30'
+                      }`}
                     >
                       {/* Connected badge */}
                       {isConnected && (
@@ -363,8 +354,6 @@ export default function ServicesPage() {
                   );
                 })}
               </div>
-
-
 
               {/* CTAs */}
               <motion.div

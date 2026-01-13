@@ -11,12 +11,20 @@ export class TimerAction {
       // API indisponible, retourner l'heure UTC du système
       // La conversion vers Paris time sera faite dans getParisTime()
       const utcNow = new Date();
-      console.log(`[Timer Action] WorldTimeAPI unavailable, using system UTC time: ${utcNow.toISOString()}`);
+      console.log(
+        `[Timer Action] WorldTimeAPI unavailable, using system UTC time: ${utcNow.toISOString()}`
+      );
       return utcNow;
     }
   }
 
-  private getParisTime(date: Date): { hour: number; minute: number; day: number; month: number; year: number } {
+  private getParisTime(date: Date): {
+    hour: number;
+    minute: number;
+    day: number;
+    month: number;
+    year: number;
+  } {
     // Utiliser toLocaleString pour obtenir l'heure de Paris
     const parisTimeStr = date.toLocaleString('en-US', {
       timeZone: 'Europe/Paris',
@@ -25,7 +33,7 @@ export class TimerAction {
       minute: '2-digit',
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
 
     // Format: "MM/DD/YYYY, HH:MM"
@@ -33,7 +41,9 @@ export class TimerAction {
     const [month, day, year] = datePart.split('/').map(Number);
     const [hour, minute] = timePart.split(':').map(Number);
 
-    console.log(`[Timer Action] Paris time: ${day}/${month}/${year} ${hour}:${minute.toString().padStart(2, '0')}`);
+    console.log(
+      `[Timer Action] Paris time: ${day}/${month}/${year} ${hour}:${minute.toString().padStart(2, '0')}`
+    );
 
     return { hour, minute, day, month, year };
   }
@@ -56,9 +66,7 @@ export class TimerAction {
       const lastParisTime = this.getParisTime(lastDate);
 
       const isSameDay =
-        lastParisTime.day === day &&
-        lastParisTime.month === month &&
-        lastParisTime.year === year;
+        lastParisTime.day === day && lastParisTime.month === month && lastParisTime.year === year;
 
       // Si on a déjà déclenché aujourd'hui
       if (isSameDay) {
@@ -103,7 +111,7 @@ export class TimerAction {
     // Obtenir le jour de la semaine en timezone Paris
     const parisTimeStr = now.toLocaleString('en-US', {
       timeZone: 'Europe/Paris',
-      weekday: 'short'
+      weekday: 'short',
     });
 
     // Convertir "Mon", "Tue", etc. en numéro (0 = Sunday, 1 = Monday, ...)
@@ -114,7 +122,7 @@ export class TimerAction {
       Wed: 3,
       Thu: 4,
       Fri: 5,
-      Sat: 6
+      Sat: 6,
     };
 
     const currentDay = dayMap[parisTimeStr];

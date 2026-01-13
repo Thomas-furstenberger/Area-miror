@@ -165,7 +165,9 @@ export class HookExecutor {
       } else if (area.actionType === 'date_reached') {
         triggered = await this.timerAction.checkDateReached(area.actionConfig as { date: string });
       } else if (area.actionType === 'day_of_week') {
-        triggered = await this.timerAction.checkDayOfWeek(area.actionConfig as { dayOfWeek: number });
+        triggered = await this.timerAction.checkDayOfWeek(
+          area.actionConfig as { dayOfWeek: number }
+        );
       }
     } else if (area.actionService === 'weather') {
       if (area.actionType === 'temperature_above') {
@@ -298,16 +300,15 @@ export class HookExecutor {
 
   start(intervalMinutes: number = 2) {
     const intervalSeconds = intervalMinutes * 60;
-    console.log(`[Hook Executor] Starting with ${intervalSeconds} second interval (${intervalMinutes} minutes)`);
+    console.log(
+      `[Hook Executor] Starting with ${intervalSeconds} second interval (${intervalMinutes} minutes)`
+    );
 
     this.execute();
 
-    this.intervalId = setInterval(
-      () => {
-        this.execute();
-      },
-      intervalSeconds * 1000
-    );
+    this.intervalId = setInterval(() => {
+      this.execute();
+    }, intervalSeconds * 1000);
   }
 
   startWithSeconds(intervalSeconds: number = 15) {
@@ -315,12 +316,9 @@ export class HookExecutor {
 
     this.execute();
 
-    this.intervalId = setInterval(
-      () => {
-        this.execute();
-      },
-      intervalSeconds * 1000
-    );
+    this.intervalId = setInterval(() => {
+      this.execute();
+    }, intervalSeconds * 1000);
   }
 
   stop() {
