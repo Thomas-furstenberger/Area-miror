@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { GmailService } from './gmail.reaction';
 
-// Interfaces pour les réponses API (nécessaires pour la résolution de chaîne)
 interface YoutubeChannelResponse {
   items?: Array<{ id: string }>;
 }

@@ -432,7 +432,7 @@ export const SERVICES: ServiceConfig[] = [
             placeholder: 'https://youtube.com/watch?v=... ou https://youtube.com/@Squeezie',
             required: true,
             description:
-              'Lien de la vidéo spécifique OU lien de la chaîne (pour commenter la dernière vidéo sortie)',
+              'Lien de la vidéo OU lien de la chaîne (pour commenter la dernière vidéo sortie)',
           },
           {
             name: 'comment',
