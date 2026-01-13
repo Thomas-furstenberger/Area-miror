@@ -1,10 +1,3 @@
-/*
- ** EPITECH PROJECT, 2026
- ** Area-miror
- ** File description:
- ** explore
- */
-
 import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
@@ -33,18 +26,32 @@ const ITEM_WIDTH = (width - PADDING * 2 - GAP) / 2;
 
 const getServiceConfig = (name: string) => {
   const n = name.toLowerCase();
-  if (n.includes('google') || n.includes('gmail'))
-    return { icon: 'logo-google', color: '#DB4437', bg: '#FEF2F2' };
-  if (n.includes('github')) return { icon: 'logo-github', color: '#24292e', bg: '#F3F4F6' };
-  if (n.includes('discord')) return { icon: 'logo-discord', color: '#5865F2', bg: '#EEF2FF' };
-  if (n.includes('spotify')) return { icon: 'musical-notes', color: '#1DB954', bg: '#ECFDF5' };
-  if (n.includes('twitch')) return { icon: 'logo-twitch', color: '#9146FF', bg: '#F5F3FF' };
-  if (n.includes('twitter') || n.includes('x'))
-    return { icon: 'logo-twitter', color: '#1DA1F2', bg: '#EFF6FF' };
+
+  if (n === 'google' || n === 'gmail') {
+    return {
+      label: 'Google',
+      icon: 'logo-google',
+      color: '#DB4437',
+      bg: '#FEF2F2',
+    };
+  }
+
+  if (n.includes('github'))
+    return { label: 'GitHub', icon: 'logo-github', color: '#24292e', bg: '#F3F4F6' };
+  if (n.includes('discord'))
+    return { label: 'Discord', icon: 'logo-discord', color: '#5865F2', bg: '#EEF2FF' };
+  if (n.includes('spotify'))
+    return { label: 'Spotify', icon: 'musical-notes', color: '#1DB954', bg: '#ECFDF5' };
+  if (n.includes('twitch'))
+    return { label: 'Twitch', icon: 'logo-twitch', color: '#9146FF', bg: '#F5F3FF' };
   if (n.includes('time') || n.includes('timer'))
-    return { icon: 'time', color: '#4B5563', bg: '#F3F4F6' };
-  if (n.includes('weather')) return { icon: 'partly-sunny', color: '#F59E0B', bg: '#FFFBEB' };
-  return { icon: 'flash', color: COLORS.link, bg: '#F0F0F0' };
+    return { label: 'Timer', icon: 'time', color: '#4B5563', bg: '#F3F4F6' };
+  if (n.includes('weather'))
+    return { label: 'Météo', icon: 'partly-sunny', color: '#F59E0B', bg: '#FFFBEB' };
+  if (n.includes('chuck'))
+    return { label: 'Blagues', icon: 'happy', color: '#F97316', bg: '#FFF7ED' };
+
+  return { label: name, icon: 'flash', color: COLORS.link, bg: '#F0F0F0' };
 };
 
 export default function ExploreScreen() {
@@ -65,7 +72,6 @@ export default function ExploreScreen() {
       if (accountsRes.success && Array.isArray(accountsRes.data.accounts)) {
         const providers = accountsRes.data.accounts.map((acc: any) => acc.provider.toLowerCase());
         setConnectedAccounts(providers);
-        console.log('[Explore] Providers actifs :', providers);
       }
     } catch (e) {
       console.error(e);
@@ -83,12 +89,11 @@ export default function ExploreScreen() {
   const checkIsConnected = (serviceName: string) => {
     const n = serviceName.toLowerCase();
 
-    if (n.includes('timer') || n.includes('weather')) return true;
-
-    if (connectedAccounts.includes(n)) return true;
+    if (n.includes('timer') || n.includes('weather') || n.includes('chuck')) return true;
 
     if (n === 'gmail' && connectedAccounts.includes('google')) return true;
-    if (n === 'google' && connectedAccounts.includes('gmail')) return true;
+
+    if (connectedAccounts.includes(n)) return true;
 
     return false;
   };
@@ -96,16 +101,16 @@ export default function ExploreScreen() {
   const handleServicePress = (serviceName: string) => {
     const name = serviceName.toLowerCase();
 
-    if (name.includes('timer') || name.includes('weather')) {
+    if (name.includes('timer') || name.includes('weather') || name.includes('chuck')) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Service Natif', 'Ce service est toujours actif.');
+      Alert.alert('Service Actif', 'Ce service ne nécessite pas de connexion.');
       return;
     }
 
     const isConnected = checkIsConnected(serviceName);
 
     if (isConnected) {
-      Alert.alert('Déconnexion', `Voulez-vous déconnecter ${serviceName} ?`, [
+      Alert.alert('Déconnexion', `Voulez-vous déconnecter ${getServiceConfig(name).label} ?`, [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Déconnecter',
@@ -118,16 +123,16 @@ export default function ExploreScreen() {
     }
   };
 
-  const disconnectService = async (providerId: string) => {
-    setProcessing(providerId);
+  const disconnectService = async (serviceName: string) => {
+    setProcessing(serviceName);
     try {
-      let target = providerId;
+      let target = serviceName;
       if (target === 'gmail') target = 'google';
 
       const res = await apiCall(`/api/user/oauth/${target}`, 'DELETE');
 
       if (res.success) {
-        setConnectedAccounts((prev) => prev.filter((p) => p !== target && p !== providerId));
+        setConnectedAccounts((prev) => prev.filter((p) => p !== target));
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         loadData();
       } else {
@@ -140,10 +145,11 @@ export default function ExploreScreen() {
     }
   };
 
-  const connectService = async (providerId: string) => {
-    setProcessing(providerId);
+  const connectService = async (serviceName: string) => {
+    setProcessing(serviceName);
     try {
-      const authUrl = await getAuthUrl(providerId);
+      const authUrl = await getAuthUrl(serviceName);
+
       const result = await WebBrowser.openAuthSessionAsync(authUrl);
       if (result.type === 'success' || result.type === 'dismiss') {
         setTimeout(loadData, 1500);
@@ -192,21 +198,27 @@ export default function ExploreScreen() {
         ) : (
           <View style={styles.grid}>
             {services.map((service) => {
-              const name = service.name;
-              const config = getServiceConfig(name);
+              const technicalName = service.name.toLowerCase();
+
+              if (technicalName === 'youtube') return null;
+
+              const config = getServiceConfig(technicalName);
               const isNative =
-                name.toLowerCase().includes('timer') || name.toLowerCase().includes('weather');
-              const isConnected = checkIsConnected(name);
-              const isProcessing = processing === name.toLowerCase();
+                technicalName.includes('timer') ||
+                technicalName.includes('weather') ||
+                technicalName.includes('chuck');
+
+              const isConnected = checkIsConnected(technicalName);
+              const isProcessing = processing === technicalName;
 
               return (
                 <TouchableOpacity
-                  key={name}
+                  key={technicalName}
                   style={[
                     styles.card,
                     isConnected ? styles.cardConnected : styles.cardDisconnected,
                   ]}
-                  onPress={() => !isProcessing && handleServicePress(name)}
+                  onPress={() => !isProcessing && handleServicePress(technicalName)}
                   activeOpacity={0.7}
                   disabled={isProcessing}
                 >
@@ -230,7 +242,7 @@ export default function ExploreScreen() {
                   </View>
 
                   <Text style={[styles.serviceName, !isConnected && { color: '#9CA3AF' }]}>
-                    {name.charAt(0).toUpperCase() + name.slice(1)}
+                    {config.label}
                   </Text>
 
                   <View
@@ -257,7 +269,7 @@ export default function ExploreScreen() {
                             isNative ? { color: '#374151' } : { color: '#047857' },
                           ]}
                         >
-                          {isNative ? 'Natif' : 'Connecté'}
+                          {isNative ? 'Actif' : 'Connecté'}
                         </Text>
                       </>
                     ) : (

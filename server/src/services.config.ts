@@ -165,6 +165,156 @@ export const SERVICES: ServiceConfig[] = [
     ],
   },
   {
+    name: 'gmail',
+    actions: [
+      {
+        name: 'email_received',
+        description: 'Un nouvel email est reçu',
+        configFields: [
+          {
+            name: 'from',
+            label: 'Email expéditeur (optionnel)',
+            type: 'email',
+            placeholder: 'exemple@email.com',
+            required: false,
+            description: 'Filtrer par adresse email spécifique',
+          },
+          {
+            name: 'subject',
+            label: 'Mot-clé dans le sujet (optionnel)',
+            type: 'text',
+            placeholder: 'urgent, facture...',
+            required: false,
+            description: 'Filtrer par mot-clé dans le sujet',
+          },
+        ],
+      },
+    ],
+    reactions: [
+      {
+        name: 'send_email',
+        description: 'Envoyer un email',
+        configFields: [
+          {
+            name: 'to',
+            label: 'Destinataire',
+            type: 'email',
+            placeholder: 'destinataire@example.com',
+            required: true,
+          },
+          {
+            name: 'subject',
+            label: 'Sujet',
+            type: 'text',
+            placeholder: "Sujet de l'email",
+            required: true,
+          },
+          {
+            name: 'body',
+            label: 'Corps du message',
+            type: 'textarea',
+            placeholder: "Contenu de l'email...",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: 'mark_as_read',
+        description: 'Marquer un email comme lu',
+        configFields: [
+          {
+            name: 'from',
+            label: 'Email expéditeur (optionnel)',
+            type: 'email',
+            placeholder: 'exemple@email.com',
+            required: false,
+            description: 'Marquer comme lu les emails de cet expéditeur',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'youtube',
+    actions: [
+      {
+        name: 'new_video',
+        description: 'Nouvelle vidéo sur une chaîne YouTube',
+        configFields: [
+          {
+            name: 'channel_url',
+            label: 'Lien de la chaîne YouTube',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/@Squeezie',
+            required: true,
+            description: "L'URL complète de la chaîne ou le Handle (@...)",
+          },
+        ],
+      },
+    ],
+    reactions: [
+      {
+        name: 'add_to_playlist',
+        description: 'Ajouter une vidéo à une playlist',
+        configFields: [
+          {
+            name: 'video_url',
+            label: 'URL de la vidéo',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/watch?v=...',
+            required: true,
+            description: 'URL complète de la vidéo YouTube',
+          },
+          {
+            name: 'playlist_id',
+            label: 'ID de la playlist',
+            type: 'text',
+            placeholder: 'PLxxx...',
+            required: true,
+            description: 'ID de la playlist YouTube',
+          },
+        ],
+      },
+      {
+        name: 'like_video',
+        description: 'Liker une vidéo',
+        configFields: [
+          {
+            name: 'video_url',
+            label: 'Lien de la vidéo',
+            type: 'url',
+            placeholder: 'https://www.youtube.com/watch?v=...',
+            required: true,
+            description: "L'URL de la vidéo à liker",
+          },
+        ],
+      },
+      {
+        name: 'post_comment',
+        description: 'Poster un commentaire',
+        configFields: [
+          {
+            name: 'url',
+            label: 'URL Vidéo ou Chaîne',
+            type: 'url',
+            placeholder: 'https://youtube.com/watch?v=... ou https://youtube.com/@Squeezie',
+            required: true,
+            description:
+              'Lien de la vidéo OU lien de la chaîne (pour commenter la dernière vidéo sortie)',
+          },
+          {
+            name: 'comment',
+            label: 'Commentaire',
+            type: 'textarea',
+            placeholder: 'Super vidéo !',
+            required: true,
+            description: 'Le contenu du commentaire à poster',
+          },
+        ],
+      },
+    ],
+  },
+  {
     name: 'timer',
     actions: [
       {
@@ -224,76 +374,6 @@ export const SERVICES: ServiceConfig[] = [
       },
     ],
     reactions: [],
-  },
-  {
-    name: 'gmail',
-    actions: [
-      {
-        name: 'email_received',
-        description: 'Un nouvel email est reçu',
-        configFields: [
-          {
-            name: 'from',
-            label: 'Email expéditeur (optionnel)',
-            type: 'email',
-            placeholder: 'exemple@email.com',
-            required: false,
-            description: 'Filtrer par adresse email spécifique',
-          },
-          {
-            name: 'subject',
-            label: 'Mot-clé dans le sujet (optionnel)',
-            type: 'text',
-            placeholder: 'urgent, facture...',
-            required: false,
-            description: 'Filtrer par mot-clé dans le sujet',
-          },
-        ],
-      },
-    ],
-    reactions: [
-      {
-        name: 'send_email',
-        description: 'Envoyer un email à un destinataire',
-        configFields: [
-          {
-            name: 'to',
-            label: 'Destinataire',
-            type: 'email',
-            placeholder: 'destinataire@example.com',
-            required: true,
-          },
-          {
-            name: 'subject',
-            label: 'Sujet',
-            type: 'text',
-            placeholder: "Sujet de l'email",
-            required: true,
-          },
-          {
-            name: 'body',
-            label: 'Corps du message',
-            type: 'textarea',
-            placeholder: "Contenu de l'email...",
-            required: true,
-          },
-        ],
-      },
-      {
-        name: 'mark_as_read',
-        description: 'Marquer un email comme lu',
-        configFields: [
-          {
-            name: 'from',
-            label: 'Email expéditeur (optionnel)',
-            type: 'email',
-            placeholder: 'exemple@email.com',
-            required: false,
-            description: 'Marquer comme lu les emails de cet expéditeur',
-          },
-        ],
-      },
-    ],
   },
   {
     name: 'discord',
@@ -361,86 +441,7 @@ export const SERVICES: ServiceConfig[] = [
             type: 'text',
             placeholder: 'AREA Bot',
             required: false,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    name: 'youtube',
-    actions: [
-      {
-        name: 'new_video',
-        description: 'Nouvelle vidéo sur une chaîne YouTube',
-        configFields: [
-          {
-            name: 'channel_url',
-            label: 'Lien de la chaîne YouTube',
-            type: 'url',
-            placeholder: 'https://www.youtube.com/@Squeezie',
-            required: true,
-            description: "L'URL complète de la chaîne ou le Handle (@...)",
-          },
-        ],
-      },
-    ],
-    reactions: [
-      {
-        name: 'add_to_playlist',
-        description: 'Ajouter une vidéo à une playlist YouTube',
-        configFields: [
-          {
-            name: 'video_url',
-            label: 'URL de la vidéo',
-            type: 'url',
-            placeholder: 'https://www.youtube.com/watch?v=...',
-            required: true,
-            description: 'URL complète de la vidéo YouTube',
-          },
-          {
-            name: 'playlist_id',
-            label: 'ID de la playlist',
-            type: 'text',
-            placeholder: 'PLxxx...',
-            required: true,
-            description: 'ID de la playlist YouTube',
-          },
-        ],
-      },
-      {
-        name: 'like_video',
-        description: 'Like a video on YouTube',
-        configFields: [
-          {
-            name: 'video_url',
-            label: 'Lien de la vidéo',
-            type: 'url',
-            placeholder: 'https://www.youtube.com/watch?v=...',
-            required: true,
-            description: "L'URL de la vidéo à liker",
-          },
-        ],
-      },
-      {
-        name: 'post_comment',
-        description: "Poster un commentaire sur une vidéo ou la dernière vidéo d'une chaîne",
-        configFields: [
-          {
-            name: 'url',
-            label: 'URL Vidéo ou Chaîne',
-            type: 'url',
-            placeholder: 'https://youtube.com/watch?v=... ou https://youtube.com/@Squeezie',
-            required: true,
-            description:
-              'Lien de la vidéo OU lien de la chaîne (pour commenter la dernière vidéo sortie)',
-          },
-          {
-            name: 'comment',
-            label: 'Commentaire',
-            type: 'textarea',
-            placeholder: 'Super vidéo !',
-            required: true,
-            description: 'Le contenu du commentaire à poster',
+            description: 'Nom personnalisé du bot',
           },
         ],
       },
