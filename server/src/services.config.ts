@@ -421,6 +421,29 @@ export const SERVICES: ServiceConfig[] = [
           },
         ],
       },
+      {
+        name: 'post_comment',
+        description: "Poster un commentaire sur une vidéo ou la dernière vidéo d'une chaîne",
+        configFields: [
+          {
+            name: 'url',
+            label: 'URL Vidéo ou Chaîne',
+            type: 'url',
+            placeholder: 'https://youtube.com/watch?v=... ou https://youtube.com/@Squeezie',
+            required: true,
+            description:
+              'Lien de la vidéo spécifique OU lien de la chaîne (pour commenter la dernière vidéo sortie)',
+          },
+          {
+            name: 'comment',
+            label: 'Commentaire',
+            type: 'textarea',
+            placeholder: 'Super vidéo !',
+            required: true,
+            description: 'Le contenu du commentaire à poster',
+          },
+        ],
+      },
     ],
   },
   {

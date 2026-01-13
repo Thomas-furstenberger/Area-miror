@@ -293,6 +293,16 @@ export class HookExecutor {
       }
 
       await this.youtubeReaction.likeVideo(area.userId, config.video_url);
+    } else if (area.reactionService === 'youtube' && area.reactionType === 'post_comment') {
+      const config = area.reactionConfig as { url: string; comment: string };
+
+      if (config.url && config.comment) {
+        await this.youtubeReaction.postComment(area.userId, config);
+      } else {
+        console.error(
+          `[Hook Executor] Config invalide pour youtube post_comment (area ${area.id})`
+        );
+      }
     }
 
     await this.areaService.updateLastTriggered(area.id);
