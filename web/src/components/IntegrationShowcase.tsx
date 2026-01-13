@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 
@@ -109,6 +109,18 @@ export default function IntegrationShowcase() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [hoveredIntegration, setHoveredIntegration] = useState<string | null>(null);
+
+  const handleConfigureClick = useCallback(
+    (serviceName: string) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        navigate(`/services?service=${serviceName.toLowerCase()}`);
+      } else {
+        navigate('/login');
+      }
+    },
+    [navigate]
+  );
 
   const filteredIntegrations =
     activeCategory === 'Tous'
@@ -232,7 +244,7 @@ export default function IntegrationShowcase() {
                 </div>
 
                 {/* Category tag */}
-                <span className="inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-text/50">
+                <span className="inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-text/70">
                   {integration.category}
                 </span>
 
@@ -253,6 +265,7 @@ export default function IntegrationShowcase() {
                     <p className="text-text/60 text-sm mb-4">Prêt à connecter ?</p>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
+                      onClick={() => handleConfigureClick(integration.name)}
                       className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold pointer-events-auto text-sm hover:bg-primary/90 transition-colors shadow-lg"
                     >
                       Configurer

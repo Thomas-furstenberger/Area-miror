@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, Filter, ArrowRight, Check, Zap, Star, ExternalLink } from 'lucide-react';
+import { Search, Filter, Check, Zap, Star, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -298,20 +298,13 @@ export default function IntegrationsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-start pt-4 border-t border-gray-100">
                   <Link
                     to={integration.docsUrl}
                     className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
                   >
                     Documentation
                     <ExternalLink className="w-3 h-3" />
-                  </Link>
-                  <Link
-                    to={`/services?connect=${integration.id}`}
-                    className="flex items-center gap-1 text-sm font-medium text-text hover:text-primary transition-colors"
-                  >
-                    Connecter
-                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </motion.div>
@@ -320,7 +313,7 @@ export default function IntegrationsPage() {
 
           {filteredIntegrations.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-text/50 text-lg">
+              <p className="text-text/70 text-lg">
                 Aucune intégration trouvée pour cette recherche.
               </p>
             </div>

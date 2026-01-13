@@ -160,7 +160,7 @@ export default function StatsSection() {
               <motion.div
                 key={company}
                 whileHover={{ scale: 1.1, opacity: 1 }}
-                className="text-2xl font-bold text-text/50"
+                className="text-2xl font-bold text-text/70"
               >
                 {company}
               </motion.div>

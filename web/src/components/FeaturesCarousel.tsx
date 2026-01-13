@@ -174,14 +174,14 @@ export default function FeaturesCarousel() {
                       </div>
 
                       {/* Learn more link */}
-                      <motion.a
+                      <motion.button
                         whileHover={{ x: 5 }}
-                        href="#"
+                        type="button"
                         className="inline-flex items-center gap-2 text-primary font-semibold"
                       >
                         En savoir plus
                         <ChevronRight className="w-4 h-4" />
-                      </motion.a>
+                      </motion.button>
                     </div>
                   </motion.div>
                 )}

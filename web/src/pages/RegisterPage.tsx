@@ -159,13 +159,13 @@ export default function RegisterPage() {
 
             <p className="text-xs text-center text-secondary">
               En vous inscrivant, vous acceptez nos{' '}
-              <a href="#" className="text-primary hover:underline">
+              <Link to="/terms" className="text-primary hover:underline">
                 Conditions d'utilisation
-              </a>{' '}
+              </Link>{' '}
               et notre{' '}
-              <a href="#" className="text-primary hover:underline">
+              <Link to="/privacy" className="text-primary hover:underline">
                 Politique de confidentialité
-              </a>
+              </Link>
             </p>
           </form>
 

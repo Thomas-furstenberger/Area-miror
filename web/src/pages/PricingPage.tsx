@@ -156,7 +156,7 @@ export default function PricingPage() {
             transition={{ delay: 0.3 }}
             className="flex items-center justify-center gap-4"
           >
-            <span className={`text-sm font-medium ${!isYearly ? 'text-text' : 'text-text/50'}`}>
+            <span className={`text-sm font-medium ${!isYearly ? 'text-text' : 'text-text/70'}`}>
               Mensuel
             </span>
             <button
@@ -170,7 +170,7 @@ export default function PricingPage() {
                 className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
               />
             </button>
-            <span className={`text-sm font-medium ${isYearly ? 'text-text' : 'text-text/50'}`}>
+            <span className={`text-sm font-medium ${isYearly ? 'text-text' : 'text-text/70'}`}>
               Annuel
             </span>
             {isYearly && (
@@ -217,7 +217,7 @@ export default function PricingPage() {
                       ? 'Gratuit'
                       : `${isYearly ? plan.price.yearly : plan.price.monthly}€`}
                   </span>
-                  {plan.price.monthly > 0 && <span className="text-text/50 ml-2">/mois</span>}
+                  {plan.price.monthly > 0 && <span className="text-text/70 ml-2">/mois</span>}
                   {plan.price.monthly > 0 && isYearly && (
                     <p className="text-sm text-text/40 mt-1">
                       Facturé {plan.price.yearly * 12}€/an
