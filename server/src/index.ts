@@ -818,7 +818,8 @@ fastify.get('/api/auth/spotify', async (request, _reply) => {
   const redirectState = query.token || query.state;
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const redirectUri = process.env.SPOTIFY_CALLBACK_URL;
-  const scope = 'user-library-read playlist-modify-public playlist-modify-private';
+  const scope =
+    'user-library-read playlist-modify-public playlist-modify-private user-modify-playback-state';
 
   if (!clientId || !redirectUri)
     return _reply.status(500).send({ error: 'Config Spotify manquante' });

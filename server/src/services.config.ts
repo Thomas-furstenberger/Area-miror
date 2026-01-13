@@ -569,4 +569,35 @@ export const SERVICES: ServiceConfig[] = [
       },
     ],
   },
+  {
+    name: 'spotify',
+    actions: [
+      {
+        name: 'new_saved_track',
+        description: 'Un nouveau titre est liké (ajouté aux favoris)',
+        configFields: [],
+      },
+    ],
+    reactions: [
+      {
+        name: 'skip_track',
+        description: 'Passer au titre suivant (nécessite Spotify ouvert sur un appareil)',
+        configFields: [],
+      },
+      {
+        name: 'play_playlist',
+        description: 'Jouer une playlist spécifique',
+        configFields: [
+          {
+            name: 'playlist_uri',
+            label: 'URI de la playlist',
+            type: 'text',
+            placeholder: 'spotify:playlist:37i9dQZF1DXcBWIGoYBM5M',
+            required: true,
+            description: "L'URI Spotify de la playlist à jouer",
+          },
+        ],
+      },
+    ],
+  },
 ];
