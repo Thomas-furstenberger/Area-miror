@@ -467,6 +467,95 @@ export default function ServicesPage() {
                   Voir mes AREAs
                 </motion.button>
               </motion.div>
+
+              {/* Section des services connectés */}
+              {connectedServices.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-16"
+                >
+                  <h2 className="text-2xl font-bold text-text mb-6 text-center">
+                    Comptes connectés
+                  </h2>
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="divide-y divide-gray-100">
+                      {connectedServices.map((service, index) => {
+                        const providerLower = service.provider.toLowerCase();
+                        let logo = null;
+                        let bgColor = 'bg-gray-100';
+                        let providerDisplayName = service.provider;
+
+                        if (providerLower === 'github') {
+                          logo = githubLogo;
+                          bgColor = 'bg-gray-900';
+                          providerDisplayName = 'GitHub';
+                        } else if (providerLower === 'google') {
+                          logo = googleLogo;
+                          bgColor = 'bg-white';
+                          providerDisplayName = 'Google';
+                        } else if (providerLower === 'discord') {
+                          logo = discordLogo;
+                          bgColor = 'bg-[#5865F2]';
+                          providerDisplayName = 'Discord';
+                        } else if (providerLower === 'spotify') {
+                          logo = spotifyLogo;
+                          bgColor = 'bg-[#1DB954]';
+                          providerDisplayName = 'Spotify';
+                        }
+
+                        return (
+                          <motion.div
+                            key={service.provider}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * index }}
+                            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className={`w-12 h-12 ${bgColor} rounded-xl flex items-center justify-center p-2 shadow-sm`}
+                              >
+                                {logo ? (
+                                  <img
+                                    src={logo}
+                                    alt={providerDisplayName}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <Box className="w-6 h-6 text-gray-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-text">{providerDisplayName}</p>
+                                <p className="text-sm text-text/60">
+                                  {service.name || service.email || 'Compte connecté'}
+                                  {service.name && service.email && (
+                                    <span className="text-text/40"> ({service.email})</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                <CheckCircle className="w-4 h-4" />
+                                Connecté
+                              </span>
+                              <button
+                                onClick={() => handleDisconnect(service.provider)}
+                                className="text-sm text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
+                              >
+                                Déconnecter
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </>
           )}
         </div>
