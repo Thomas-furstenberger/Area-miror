@@ -137,9 +137,9 @@ export default function AreasPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <main className="flex-grow">
+      <main className="flex-grow pt-20">
         {/* Hero Header */}
-        <div className="bg-gradient-to-br from-primary via-primary/90 to-dark py-16 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-primary via-primary/90 to-dark py-8 relative overflow-hidden">
           <div className="absolute inset-0">
             <motion.div
               animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
