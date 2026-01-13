@@ -36,6 +36,8 @@ export class YoutubeReaction {
     try {
       const accessToken = await this.gmailService.getValidToken(userId);
 
+      const cleanVideoId = this.extractVideoId(config.video_id) || config.video_id;
+
       const response = await fetch(
         'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
         {
@@ -49,7 +51,7 @@ export class YoutubeReaction {
               playlistId: config.playlist_id,
               resourceId: {
                 kind: 'youtube#video',
-                videoId: config.video_id,
+                videoId: cleanVideoId,
               },
             },
           }),
@@ -65,7 +67,7 @@ export class YoutubeReaction {
         return false;
       }
 
-      console.log(`[YouTube] Vidéo ${config.video_id} ajoutée à la playlist ${config.playlist_id}`);
+      console.log(`[YouTube] Vidéo ${cleanVideoId} ajoutée à la playlist ${config.playlist_id}`);
       return true;
     } catch (error) {
       console.error('[YouTube Reaction Error]', error);
@@ -73,31 +75,38 @@ export class YoutubeReaction {
     }
   }
 
-  async likeVideo(userId: number, videoUrl: string) {
-    const accessToken = await this.gmailService.getValidToken(userId);
+  async likeVideo(userId: number, videoUrl: string): Promise<boolean> {
+    try {
+      const accessToken = await this.gmailService.getValidToken(userId);
 
-    const videoId = this.extractVideoId(videoUrl);
-    if (!videoId) {
-      throw new Error(`URL de vidéo invalide : ${videoUrl}`);
-    }
-
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos/rate?id=${videoId}&rating=like`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Length': '0',
-        },
+      const videoId = this.extractVideoId(videoUrl);
+      if (!videoId) {
+        console.error(`[YouTube Reaction] URL vidéo invalide ou format non reconnu : ${videoUrl}`);
+        return false;
       }
-    );
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos/rate?id=${videoId}&rating=like`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Length': '0',
+          },
+        }
+      );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Erreur YouTube API (${response.status}): ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[YouTube Reaction] Erreur Like API (${response.status}): ${errorText}`);
+        return false;
+      }
+
+      console.log(`[YouTube Reaction] Vidéo ${videoId} likée avec succès !`);
+      return true;
+    } catch (error) {
+      console.error('[YouTube Reaction Error] Impossible de liker la vidéo:', error);
+      return false;
     }
-
-    console.log(`[YouTube Reaction] Vidéo ${videoId} likée avec succès !`);
   }
 
   async postComment(userId: number, config: { url: string; comment: string }): Promise<boolean> {
@@ -107,7 +116,7 @@ export class YoutubeReaction {
 
       if (!videoId) {
         console.log(
-          `[YouTube Reaction] URL vidéo non détectée, on regarde si c'est une chaîne: ${config.url}`
+          `[YouTube Reaction] URL vidéo non détectée, tentative de résolution chaîne: ${config.url}`
         );
         const channelId = await this.resolveChannelId(accessToken, config.url);
 
@@ -160,7 +169,16 @@ export class YoutubeReaction {
   }
 
   private extractVideoId(url: string): string | null {
-    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11}).*/);
+    if (!url) return null;
+
+    if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+      return url;
+    }
+
+    const regex =
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|shorts\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+
     return match ? match[1] : null;
   }
 
@@ -214,7 +232,7 @@ export class YoutubeReaction {
           if (data.items && data.items.length > 0) return data.items[0].id;
         }
       } catch (error) {
-        console.warn(`[YouTube Reaction] Échec résolution handle ${h}:`, error);
+        console.error('[YouTube Reaction] Erreur during forHandle:', error);
       }
     }
 
