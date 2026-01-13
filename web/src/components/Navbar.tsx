@@ -63,17 +63,32 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <motion.div
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.5 }}
-              className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg shadow-primary/25"
-            >
-              <span className="text-background font-bold text-xl">A</span>
-            </motion.div>
-            <span className="text-2xl font-bold text-text group-hover:text-primary transition-colors">
+          <Link to="/" className="flex flex-col group">
+            <span className="text-2xl font-bold text-primary group-hover:text-secondary transition-colors tracking-wide">
               AREA
             </span>
+            <svg
+              className="w-12 h-3 -mt-1 text-primary group-hover:text-secondary transition-colors"
+              viewBox="0 0 48 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 4 Q 20 10, 38 4"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M34 0 L 40 4 L 34 8"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
           </Link>
 
           {/* Desktop Navigation */}

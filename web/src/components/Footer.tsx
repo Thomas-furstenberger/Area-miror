@@ -101,11 +101,30 @@ export default function Footer() {
         <div className="py-16 grid grid-cols-2 md:grid-cols-6 gap-8">
           {/* Brand Column */}
           <div className="col-span-2 space-y-6">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-background font-bold text-xl">A</span>
-              </div>
-              <span className="text-2xl font-bold text-background">AREA</span>
+            <Link to="/" className="flex flex-col">
+              <span className="text-2xl font-bold text-background tracking-wide">AREA</span>
+              <svg
+                className="w-12 h-3 -mt-1 text-background"
+                viewBox="0 0 48 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 4 Q 20 10, 38 4"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M34 0 L 40 4 L 34 8"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
             </Link>
             <p className="text-background/70 leading-relaxed">
               Automatisez vos workflows et boostez votre productivité avec notre plateforme
