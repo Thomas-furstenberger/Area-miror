@@ -820,7 +820,8 @@ fastify.get('/api/auth/spotify', async (request, _reply) => {
   const redirectUri = process.env.SPOTIFY_CALLBACK_URL;
   const scope = 'user-library-read playlist-modify-public playlist-modify-private';
 
-  if (!clientId || !redirectUri) return _reply.status(500).send({ error: 'Config Spotify manquante' });
+  if (!clientId || !redirectUri)
+    return _reply.status(500).send({ error: 'Config Spotify manquante' });
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -846,7 +847,11 @@ fastify.get('/api/auth/spotify/callback', async (request, _reply) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: 'Basic ' + Buffer.from(process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET).toString('base64')
+        Authorization:
+          'Basic ' +
+          Buffer.from(
+            process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+          ).toString('base64'),
       },
       body: new URLSearchParams({
         code,
@@ -856,12 +861,16 @@ fastify.get('/api/auth/spotify/callback', async (request, _reply) => {
     });
 
     if (!tokenRes.ok) {
-        const errText = await tokenRes.text();
-        console.error('Spotify Token Error:', errText);
-        return _reply.status(401).send({ error: 'Failed to exchange code' });
+      const errText = await tokenRes.text();
+      console.error('Spotify Token Error:', errText);
+      return _reply.status(401).send({ error: 'Failed to exchange code' });
     }
 
-    const tokenData = await tokenRes.json() as { access_token: string; refresh_token: string; expires_in: number };
+    const tokenData = (await tokenRes.json()) as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    };
 
     const userRes = await fetch('https://api.spotify.com/v1/me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -869,11 +878,11 @@ fastify.get('/api/auth/spotify/callback', async (request, _reply) => {
 
     if (!userRes.ok) return _reply.status(401).send({ error: 'Failed to fetch user info' });
 
-    const spotifyUser = await userRes.json() as {
-        id: string;
-        display_name: string;
-        images?: { url: string }[];
-        email: string
+    const spotifyUser = (await userRes.json()) as {
+      id: string;
+      display_name: string;
+      images?: { url: string }[];
+      email: string;
     };
 
     let finalRedirectUrl = (process.env.FRONTEND_URL || 'http://localhost:8081') + '/login/success';
@@ -943,7 +952,6 @@ fastify.get('/api/auth/spotify/callback', async (request, _reply) => {
     return _reply.redirect(
       `${finalRedirectUrl}${separator}token=${encodeURIComponent(finalSessionToken)}&service=spotify&connected=true`
     );
-
   } catch (err) {
     fastify.log.error(err);
     return _reply.status(500).send({ error: 'Auth failed' });
