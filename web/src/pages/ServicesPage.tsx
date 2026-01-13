@@ -14,7 +14,7 @@ import {
   Zap,
   Link2,
   Unlink,
-  Twitter,
+  Music,
 } from 'lucide-react';
 
 interface ConnectedService {
@@ -55,13 +55,13 @@ const SERVICES = [
     authUrl: `${API_URL}/api/auth/gmail`,
   },
   {
-    id: 'twitter',
-    name: 'X (Twitter)',
-    icon: Twitter,
-    color: 'from-gray-700 to-black',
-    bgColor: 'bg-black',
-    description: 'Connectez X pour poster des tweets et gérer vos interactions automatiquement.',
-    authUrl: `${API_URL}/api/auth/twitter`,
+    id: 'spotify',
+    name: 'Spotify',
+    icon: Music,
+    color: 'from-green-400 to-green-600',
+    bgColor: 'bg-green-500',
+    description: 'Connectez Spotify pour automatiser vos playlists et vos likes musicaux.',
+    authUrl: `${API_URL}/api/auth/spotify`,
   },
 ];
 
