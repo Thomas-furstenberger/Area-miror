@@ -6,8 +6,6 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 
 export const getBaseUrl = async () => {
@@ -16,11 +14,7 @@ export const getBaseUrl = async () => {
     const port = await AsyncStorage.getItem('server_port');
 
     if (!ip) return 'http://localhost:8080';
-
-    if (ip.startsWith('http')) {
-      return ip;
-    }
-
+    if (ip.startsWith('http')) return ip;
     if (!port) return `http://${ip}:8080`;
     return `http://${ip}:${port}`;
   } catch (error) {
@@ -146,8 +140,6 @@ export const getAuthUrl = async (provider: string) => {
     redirect: redirectUrl,
     userToken: token,
   });
-
-  console.log(`[OAuth] State généré : ${stateData}`);
 
   return `${baseUrl}/api/auth/${provider}?state=${encodeURIComponent(stateData)}`;
 };

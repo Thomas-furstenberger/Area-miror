@@ -108,7 +108,7 @@ export default function CreateAreaScreen() {
       if (res.success && res.data?.server?.services) {
         setServices(res.data.server.services);
       } else {
-        Alert.alert('Erreur', 'Impossible de charger les services depuis le serveur.');
+        Alert.alert('Erreur', 'Impossible de charger les services.');
       }
     } catch (error) {
       Alert.alert('Erreur', 'Erreur réseau');
@@ -154,7 +154,6 @@ export default function CreateAreaScreen() {
       if (config.time) {
         let h = 0,
           m = 0;
-
         if (
           typeof config.time === 'string' &&
           config.time.includes(':') &&
@@ -170,11 +169,9 @@ export default function CreateAreaScreen() {
             m = date.getMinutes();
           }
         }
-
         newConfig.hour = h;
         newConfig.minute = m;
       }
-
       if (config.date) {
         const date = new Date(config.date);
         if (!isNaN(date.getTime())) {
@@ -186,13 +183,38 @@ export default function CreateAreaScreen() {
           newConfig.date = config.date;
         }
       }
-
       if (config.day) {
         newConfig.dayOfWeek = parseInt(config.day, 10);
       }
     }
 
+    if (p.includes('weather')) {
+      if (config.temperature) {
+        newConfig.temperature = Number(config.temperature);
+      }
+    }
+
+    if (p.includes('github')) {
+      if (config.issue_number) {
+        newConfig.issue_number = parseInt(config.issue_number, 10);
+      }
+    }
+
+    if (p.includes('youtube')) {
+      if (newConfig.video_url && !newConfig.video_id) {
+        newConfig.video_id = newConfig.video_url;
+      }
+    }
+
     return newConfig;
+  };
+
+  const getBackendServiceName = (serviceName: string) => {
+    const s = serviceName.toLowerCase();
+    if (s === 'gmail' || s === 'youtube') {
+      return 'Google';
+    }
+    return serviceName;
   };
 
   const handleCreate = async () => {
@@ -205,12 +227,15 @@ export default function CreateAreaScreen() {
       const cleanActionConfig = formatParams(actionService!.name, actionConfig);
       const cleanReactionConfig = formatParams(reactionService!.name, reactionConfig);
 
+      const backendActionService = getBackendServiceName(actionService!.name);
+      const backendReactionService = getBackendServiceName(reactionService!.name);
+
       const payload = {
         name: areaName,
-        action_provider: actionService!.name,
+        action_provider: backendActionService,
         action_id: action!.name,
         action_params: cleanActionConfig,
-        reaction_provider: reactionService!.name,
+        reaction_provider: backendReactionService,
         reaction_id: reaction!.name,
         reaction_params: cleanReactionConfig,
       };
@@ -221,7 +246,7 @@ export default function CreateAreaScreen() {
         Alert.alert('Succès', 'Automation créée avec succès !');
         router.replace('/(tabs)/areas');
       } else {
-        Alert.alert('Erreur', res.error || 'Erreur inconnue lors de la création.');
+        Alert.alert('Erreur', res.error || 'Erreur lors de la création.');
       }
     } catch (e) {
       Alert.alert('Erreur', 'Erreur réseau critique.');
@@ -289,13 +314,9 @@ export default function CreateAreaScreen() {
       let placeholder = f.placeholder;
       let keyboardType: any = 'default';
 
-      if (f.type === 'time') {
-        placeholder = 'Ex: 14:30';
-      } else if (f.type === 'date') {
-        placeholder = 'Ex: 2025-12-31';
-      } else if (f.type === 'number') {
-        keyboardType = 'numeric';
-      }
+      if (f.type === 'time') placeholder = 'Ex: 14:30';
+      if (f.type === 'date') placeholder = 'Ex: 2025-12-31';
+      if (f.type === 'number') keyboardType = 'numeric';
 
       return (
         <View key={f.name} style={styles.inputContainer}>
@@ -309,7 +330,7 @@ export default function CreateAreaScreen() {
             placeholder={placeholder}
             keyboardType={keyboardType}
             autoCapitalize="none"
-            value={values[f.name]}
+            value={values[f.name] ? String(values[f.name]) : ''}
             onChangeText={(t) => setValues({ ...values, [f.name]: t })}
           />
         </View>
@@ -443,7 +464,6 @@ export default function CreateAreaScreen() {
         return (
           <View>
             <Text style={styles.headerTitle}>Résumé et Nommage</Text>
-
             <View style={styles.summaryCard}>
               <View style={styles.summaryRow}>
                 <Text style={styles.ifText}>SI</Text>
@@ -461,7 +481,6 @@ export default function CreateAreaScreen() {
                 </View>
               </View>
             </View>
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Nom de l'automation</Text>
               <TextInput
@@ -471,7 +490,6 @@ export default function CreateAreaScreen() {
                 onChangeText={setAreaName}
               />
             </View>
-
             <TouchableOpacity
               style={[styles.createButton, submitting && { opacity: 0.7 }]}
               onPress={handleCreate}
@@ -561,7 +579,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
   },
-  badgeText: { marginLeft: 8, fontWeight: '600', color: '#555', textTransform: 'uppercase' },
+  badgeText: {
+    marginLeft: 8,
+    fontWeight: '600',
+    color: '#555',
+    textTransform: 'uppercase',
+  },
   formBox: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, marginBottom: 20 },
   inputContainer: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8 },
@@ -620,7 +643,12 @@ const styles = StyleSheet.create({
   ifText: { fontSize: 14, fontWeight: '900', color: '#6366F1', width: 60, marginTop: 2 },
   thenText: { fontSize: 14, fontWeight: '900', color: '#10B981', width: 60, marginTop: 2 },
   summaryContent: { flex: 1 },
-  summaryService: { fontSize: 12, color: '#888', textTransform: 'uppercase', fontWeight: '700' },
+  summaryService: {
+    fontSize: 12,
+    color: '#888',
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
   summaryDesc: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 2 },
   connectorLine: {
     width: 2,
