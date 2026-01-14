@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/Navbar';
@@ -42,35 +42,7 @@ export default function ServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const service = params.get('service');
-    const connected = params.get('connected');
-    const errorParam = params.get('error');
-
-    if (token) {
-      localStorage.setItem('token', token);
-      window.history.replaceState({}, '', '/services');
-
-      if (errorParam) {
-        const errorMsg = decodeURIComponent(errorParam);
-        if (errorMsg.includes('already connected')) {
-          setError('Ce compte est déjà connecté à un autre utilisateur');
-        } else {
-          setError(`Erreur lors de la connexion: ${errorMsg}`);
-        }
-        setTimeout(() => setError(null), 8000);
-      } else if (connected && service) {
-        setSuccessMessage(`${service.toUpperCase()} connecté avec succès !`);
-        setTimeout(() => setSuccessMessage(null), 5000);
-      }
-    }
-
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -114,7 +86,35 @@ export default function ServicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const service = params.get('service');
+    const connected = params.get('connected');
+    const errorParam = params.get('error');
+
+    if (token) {
+      localStorage.setItem('token', token);
+      window.history.replaceState({}, '', '/services');
+
+      if (errorParam) {
+        const errorMsg = decodeURIComponent(errorParam);
+        if (errorMsg.includes('already connected')) {
+          setError('Ce compte est déjà connecté à un autre utilisateur');
+        } else {
+          setError(`Erreur lors de la connexion: ${errorMsg}`);
+        }
+        setTimeout(() => setError(null), 8000);
+      } else if (connected && service) {
+        setSuccessMessage(`${service.toUpperCase()} connecté avec succès !`);
+        setTimeout(() => setSuccessMessage(null), 5000);
+      }
+    }
+
+    loadData();
+  }, [loadData]);
 
   const handleConnect = (serviceName: string) => {
     const token = localStorage.getItem('token');

@@ -200,15 +200,12 @@ export class MyServiceAction {
       }
 
       // 2. Call external API
-      const response = await fetch(
-        `https://api.myservice.com/items?category=${config.category}`,
-        {
-          headers: {
-            Authorization: `Bearer ${account.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(`https://api.myservice.com/items?category=${config.category}`, {
+        headers: {
+          Authorization: `Bearer ${account.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         console.error(`[MyService] API error: ${response.status}`);
