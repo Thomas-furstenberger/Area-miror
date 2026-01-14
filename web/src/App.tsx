@@ -10,6 +10,7 @@ import CreateAreaPage from './pages/CreateAreaPage';
 import PricingPage from './pages/PricingPage';
 import ResourcesPage from './pages/ResourcesPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import ContactPage from './pages/ContactPage';
 
 // Composant qui fait défiler vers le haut à chaque changement de route
 function ScrollToTop() {
@@ -37,6 +38,7 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/resources" element={<ResourcesPage />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Routes>
     </Router>
   );

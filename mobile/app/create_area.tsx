@@ -22,7 +22,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { getBaseUrl, createArea } from '@/services/api';
+import { createArea, fetchAbout } from '@/services/api';
 
 interface ConfigField {
   name: string;
@@ -56,7 +56,11 @@ const getServiceIcon = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('github')) return 'logo-github';
   if (n.includes('google') || n.includes('gmail')) return 'logo-google';
+  if (n.includes('youtube')) return 'logo-youtube';
   if (n.includes('discord')) return 'logo-discord';
+  if (n.includes('spotify')) return 'musical-notes';
+  if (n.includes('weather')) return 'partly-sunny';
+  if (n.includes('chuck')) return 'happy';
   if (n.includes('time')) return 'time';
   return 'cube';
 };
@@ -65,8 +69,12 @@ const getServiceColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('github')) return '#333';
   if (n.includes('google') || n.includes('gmail')) return '#DB4437';
+  if (n.includes('youtube')) return '#FF0000';
   if (n.includes('discord')) return '#5865F2';
-  if (n.includes('time')) return '#F5A623';
+  if (n.includes('spotify')) return '#1DB954';
+  if (n.includes('weather')) return '#F59E0B';
+  if (n.includes('chuck')) return '#F97316';
+  if (n.includes('time')) return '#4B5563';
   return COLORS.link;
 };
 
@@ -91,19 +99,19 @@ export default function CreateAreaScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchServices();
+    loadServices();
   }, []);
 
-  const fetchServices = async () => {
+  const loadServices = async () => {
     try {
-      const baseUrl = await getBaseUrl();
-      const response = await fetch(`${baseUrl}/about.json`);
-      const data = await response.json();
-      if (data?.server?.services) {
-        setServices(data.server.services);
+      const res = await fetchAbout();
+      if (res.success && res.data?.server?.services) {
+        setServices(res.data.server.services);
+      } else {
+        Alert.alert('Erreur', 'Impossible de charger les services.');
       }
     } catch (error) {
-      Alert.alert('Erreur', 'Impossible de charger les services');
+      Alert.alert('Erreur', 'Erreur réseau');
     } finally {
       setLoading(false);
     }
@@ -112,9 +120,12 @@ export default function CreateAreaScreen() {
   const validateConfig = (fields: ConfigField[] | undefined, values: any) => {
     if (!fields) return true;
     for (const field of fields) {
-      if (field.required && !values[field.name]) {
-        Alert.alert('Manquant', `Le champ "${field.label}" est requis.`);
-        return false;
+      if (field.required) {
+        const val = values[field.name];
+        if (val === undefined || val === '' || val === null) {
+          Alert.alert('Manquant', `Le champ "${field.label}" est requis.`);
+          return false;
+        }
       }
     }
     return true;
@@ -135,6 +146,77 @@ export default function CreateAreaScreen() {
     else router.back();
   };
 
+  const formatParams = (provider: string, config: any) => {
+    const p = provider.toLowerCase();
+    const newConfig = { ...config };
+
+    if (p.includes('timer')) {
+      if (config.time) {
+        let h = 0,
+          m = 0;
+        if (
+          typeof config.time === 'string' &&
+          config.time.includes(':') &&
+          !config.time.includes('T')
+        ) {
+          const parts = config.time.split(':');
+          h = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+        } else {
+          const date = new Date(config.time);
+          if (!isNaN(date.getTime())) {
+            h = date.getHours();
+            m = date.getMinutes();
+          }
+        }
+        newConfig.hour = h;
+        newConfig.minute = m;
+      }
+      if (config.date) {
+        const date = new Date(config.date);
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          newConfig.date = `${year}-${month}-${day}`;
+        } else if (typeof config.date === 'string') {
+          newConfig.date = config.date;
+        }
+      }
+      if (config.day) {
+        newConfig.dayOfWeek = parseInt(config.day, 10);
+      }
+    }
+
+    if (p.includes('weather')) {
+      if (config.temperature) {
+        newConfig.temperature = Number(config.temperature);
+      }
+    }
+
+    if (p.includes('github')) {
+      if (config.issue_number) {
+        newConfig.issue_number = parseInt(config.issue_number, 10);
+      }
+    }
+
+    if (p.includes('youtube')) {
+      if (newConfig.video_url && !newConfig.video_id) {
+        newConfig.video_id = newConfig.video_url;
+      }
+    }
+
+    return newConfig;
+  };
+
+  const getBackendServiceName = (serviceName: string) => {
+    const s = serviceName.toLowerCase();
+    if (s === 'gmail' || s === 'youtube') {
+      return 'Google';
+    }
+    return serviceName;
+  };
+
   const handleCreate = async () => {
     if (!areaName.trim()) {
       Alert.alert('Erreur', "Donnez un nom à l'automation.");
@@ -142,55 +224,36 @@ export default function CreateAreaScreen() {
     }
     setSubmitting(true);
     try {
-      const res = await createArea(
-        areaName,
-        actionService!.name,
-        action!.name,
-        actionConfig,
-        reactionService!.name,
-        reaction!.name,
-        reactionConfig
-      );
+      const cleanActionConfig = formatParams(actionService!.name, actionConfig);
+      const cleanReactionConfig = formatParams(reactionService!.name, reactionConfig);
+
+      const backendActionService = getBackendServiceName(actionService!.name);
+      const backendReactionService = getBackendServiceName(reactionService!.name);
+
+      const payload = {
+        name: areaName,
+        action_provider: backendActionService,
+        action_id: action!.name,
+        action_params: cleanActionConfig,
+        reaction_provider: backendReactionService,
+        reaction_id: reaction!.name,
+        reaction_params: cleanReactionConfig,
+      };
+
+      const res = await createArea(payload);
+
       if (res.success) {
-        Alert.alert('Succès', 'Automation créée !');
+        Alert.alert('Succès', 'Automation créée avec succès !');
         router.replace('/(tabs)/areas');
       } else {
-        Alert.alert('Erreur', res.error || 'Erreur inconnue');
+        Alert.alert('Erreur', res.error || 'Erreur lors de la création.');
       }
     } catch (e) {
-      Alert.alert('Erreur', 'Erreur réseau');
+      Alert.alert('Erreur', 'Erreur réseau critique.');
     } finally {
       setSubmitting(false);
     }
   };
-
-  const renderProgressBar = () => (
-    <View style={styles.progressContainer}>
-      <View style={[styles.progressBar, { width: `${(step / totalSteps) * 100}%` }]} />
-    </View>
-  );
-
-  const renderServiceCard = (s: Service, onPress: () => void) => (
-    <TouchableOpacity key={s.name} style={styles.card} onPress={onPress}>
-      <View style={[styles.iconBox, { backgroundColor: getServiceColor(s.name) + '20' }]}>
-        <Ionicons name={getServiceIcon(s.name) as any} size={24} color={getServiceColor(s.name)} />
-      </View>
-      <View style={{ flex: 1, marginLeft: 15 }}>
-        <Text style={styles.cardTitle}>{s.name.charAt(0).toUpperCase() + s.name.slice(1)}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCC" />
-    </TouchableOpacity>
-  );
-
-  const renderItemCard = (title: string, desc: string, onPress: () => void) => (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>{desc}</Text>
-        <Text style={styles.cardSub}>{title}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#CCC" />
-    </TouchableOpacity>
-  );
 
   const renderFormFields = (fields: ConfigField[] | undefined, values: any, setValues: any) => {
     if (!fields || fields.length === 0) {
@@ -202,52 +265,100 @@ export default function CreateAreaScreen() {
       );
     }
 
-    return fields.map((f) => (
-      <View key={f.name} style={styles.inputContainer}>
-        <Text style={styles.label}>
-          {f.label} {f.required && <Text style={{ color: 'red' }}>*</Text>}
-        </Text>
-        {f.description && <Text style={styles.helperText}>{f.description}</Text>}
-
-        {f.type === 'textarea' ? (
-          <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-            multiline
-            placeholder={f.placeholder}
-            value={values[f.name]}
-            onChangeText={(t) => setValues({ ...values, [f.name]: t })}
-          />
-        ) : f.type === 'select' ? (
-          <View style={styles.selectRow}>
-            {f.options?.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  styles.optionChip,
-                  values[f.name] === opt.value && styles.optionChipSelected,
-                ]}
-                onPress={() => setValues({ ...values, [f.name]: opt.value })}
-              >
-                <Text
-                  style={[styles.optionText, values[f.name] === opt.value && { color: '#FFF' }]}
+    return fields.map((f) => {
+      if (f.type === 'select') {
+        return (
+          <View key={f.name} style={styles.inputContainer}>
+            <Text style={styles.label}>
+              {f.label} {f.required && '*'}
+            </Text>
+            <View style={styles.selectRow}>
+              {f.options?.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.optionChip,
+                    values[f.name] === opt.value && styles.optionChipSelected,
+                  ]}
+                  onPress={() => setValues({ ...values, [f.name]: opt.value })}
                 >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[styles.optionText, values[f.name] === opt.value && { color: '#FFF' }]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        ) : (
+        );
+      }
+
+      if (f.type === 'textarea') {
+        return (
+          <View key={f.name} style={styles.inputContainer}>
+            <Text style={styles.label}>
+              {f.label} {f.required && '*'}
+            </Text>
+            <TextInput
+              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+              multiline
+              placeholder={f.placeholder}
+              value={values[f.name]}
+              onChangeText={(t) => setValues({ ...values, [f.name]: t })}
+            />
+          </View>
+        );
+      }
+
+      let placeholder = f.placeholder;
+      let keyboardType: any = 'default';
+
+      if (f.type === 'time') placeholder = 'Ex: 14:30';
+      if (f.type === 'date') placeholder = 'Ex: 2025-12-31';
+      if (f.type === 'number') keyboardType = 'numeric';
+
+      return (
+        <View key={f.name} style={styles.inputContainer}>
+          <Text style={styles.label}>
+            {f.label} {f.required && <Text style={{ color: 'red' }}>*</Text>}
+          </Text>
+          {f.description && <Text style={styles.helperText}>{f.description}</Text>}
+
           <TextInput
             style={styles.input}
-            placeholder={f.placeholder}
-            keyboardType={f.type === 'number' ? 'numeric' : 'default'}
-            value={values[f.name]}
+            placeholder={placeholder}
+            keyboardType={keyboardType}
+            autoCapitalize="none"
+            value={values[f.name] ? String(values[f.name]) : ''}
             onChangeText={(t) => setValues({ ...values, [f.name]: t })}
           />
-        )}
-      </View>
-    ));
+        </View>
+      );
+    });
   };
+
+  const renderServiceCard = (s: Service, onPress: () => void) => (
+    <TouchableOpacity key={s.name} style={styles.card} onPress={onPress}>
+      <View style={[styles.iconBox, { backgroundColor: getServiceColor(s.name) + '20' }]}>
+        <Ionicons name={getServiceIcon(s.name) as any} size={28} color={getServiceColor(s.name)} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 15 }}>
+        <Text style={styles.cardTitle}>{s.name.charAt(0).toUpperCase() + s.name.slice(1)}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+    </TouchableOpacity>
+  );
+
+  const renderItemCard = (key: string, title: string, desc: string, onPress: () => void) => (
+    <TouchableOpacity key={key} style={styles.card} onPress={onPress}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSub}>{desc}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#CCC" />
+    </TouchableOpacity>
+  );
 
   const renderContent = () => {
     switch (step) {
@@ -275,7 +386,7 @@ export default function CreateAreaScreen() {
               <Text style={styles.badgeText}>{actionService?.name}</Text>
             </View>
             {actionService?.actions.map((a) =>
-              renderItemCard(a.name, a.description, () => {
+              renderItemCard(a.name, a.name, a.description, () => {
                 setAction(a);
                 handleNext();
               })
@@ -288,11 +399,9 @@ export default function CreateAreaScreen() {
           <View>
             <Text style={styles.headerTitle}>Configuration de l'Action</Text>
             <Text style={styles.subHeader}>Paramétrez : {action?.description}</Text>
-
             <View style={styles.formBox}>
               {renderFormFields(action?.configFields, actionConfig, setActionConfig)}
             </View>
-
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
               <Text style={styles.nextButtonText}>Valider et Continuer</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
@@ -328,7 +437,7 @@ export default function CreateAreaScreen() {
               <Text style={styles.badgeText}>{reactionService?.name}</Text>
             </View>
             {reactionService?.reactions.map((r) =>
-              renderItemCard(r.name, r.description, () => {
+              renderItemCard(r.name, r.name, r.description, () => {
                 setReaction(r);
                 handleNext();
               })
@@ -341,11 +450,9 @@ export default function CreateAreaScreen() {
           <View>
             <Text style={styles.headerTitle}>Configuration de la Réaction</Text>
             <Text style={styles.subHeader}>Paramétrez : {reaction?.description}</Text>
-
             <View style={styles.formBox}>
               {renderFormFields(reaction?.configFields, reactionConfig, setReactionConfig)}
             </View>
-
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
               <Text style={styles.nextButtonText}>Valider et Continuer</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
@@ -357,7 +464,6 @@ export default function CreateAreaScreen() {
         return (
           <View>
             <Text style={styles.headerTitle}>Résumé et Nommage</Text>
-
             <View style={styles.summaryCard}>
               <View style={styles.summaryRow}>
                 <Text style={styles.ifText}>SI</Text>
@@ -366,9 +472,7 @@ export default function CreateAreaScreen() {
                   <Text style={styles.summaryDesc}>{action?.description}</Text>
                 </View>
               </View>
-
               <View style={styles.connectorLine} />
-
               <View style={styles.summaryRow}>
                 <Text style={styles.thenText}>ALORS</Text>
                 <View style={styles.summaryContent}>
@@ -377,17 +481,15 @@ export default function CreateAreaScreen() {
                 </View>
               </View>
             </View>
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Nom de l'automation</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Sync GitHub vers Discord"
+                placeholder="Ex: Alerte Météo vers Discord"
                 value={areaName}
                 onChangeText={setAreaName}
               />
             </View>
-
             <TouchableOpacity
               style={[styles.createButton, submitting && { opacity: 0.7 }]}
               onPress={handleCreate}
@@ -426,7 +528,9 @@ export default function CreateAreaScreen() {
           </Text>
         </View>
 
-        {renderProgressBar()}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressBar, { width: `${(step / totalSteps) * 100}%` }]} />
+        </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>{renderContent()}</ScrollView>
       </KeyboardAvoidingView>
@@ -437,19 +541,14 @@ export default function CreateAreaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFF' },
   backBtn: { marginRight: 15 },
   stepIndicator: { fontSize: 16, fontWeight: '600', color: '#666' },
-
   progressContainer: { height: 4, backgroundColor: '#E0E0E0', width: '100%' },
   progressBar: { height: '100%', backgroundColor: COLORS.link },
-
-  scrollContent: { padding: 20 },
-
+  scrollContent: { padding: 20, paddingBottom: 100 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 20 },
   subHeader: { fontSize: 16, color: '#666', marginBottom: 20 },
-
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,7 +570,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
   cardSub: { fontSize: 13, color: '#888', marginTop: 4, textTransform: 'uppercase' },
-
   selectedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -481,8 +579,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
   },
-  badgeText: { marginLeft: 8, fontWeight: '600', color: '#555', textTransform: 'uppercase' },
-
+  badgeText: {
+    marginLeft: 8,
+    fontWeight: '600',
+    color: '#555',
+    textTransform: 'uppercase',
+  },
   formBox: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, marginBottom: 20 },
   inputContainer: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8 },
@@ -495,7 +597,6 @@ const styles = StyleSheet.create({
     borderColor: '#EEE',
     fontSize: 16,
   },
-
   nextButton: {
     flexDirection: 'row',
     backgroundColor: COLORS.link,
@@ -509,7 +610,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   nextButtonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginRight: 10 },
-
   createButton: {
     backgroundColor: '#10B981',
     padding: 18,
@@ -518,10 +618,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   createButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-
   emptyState: { alignItems: 'center', padding: 20 },
   emptyText: { marginTop: 10, color: '#888' },
-
   selectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   optionChip: {
     paddingHorizontal: 16,
@@ -533,7 +631,6 @@ const styles = StyleSheet.create({
   },
   optionChipSelected: { backgroundColor: COLORS.link, borderColor: COLORS.link },
   optionText: { color: '#555', fontWeight: '500' },
-
   summaryCard: {
     backgroundColor: '#FFF',
     padding: 20,
@@ -546,7 +643,12 @@ const styles = StyleSheet.create({
   ifText: { fontSize: 14, fontWeight: '900', color: '#6366F1', width: 60, marginTop: 2 },
   thenText: { fontSize: 14, fontWeight: '900', color: '#10B981', width: 60, marginTop: 2 },
   summaryContent: { flex: 1 },
-  summaryService: { fontSize: 12, color: '#888', textTransform: 'uppercase', fontWeight: '700' },
+  summaryService: {
+    fontSize: 12,
+    color: '#888',
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
   summaryDesc: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 2 },
   connectorLine: {
     width: 2,

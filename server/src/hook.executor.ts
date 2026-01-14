@@ -117,13 +117,13 @@ export class HookExecutor {
 
     let triggered = false;
 
-    if (area.actionService === 'gmail' && area.actionType === 'email_received') {
+    if (area.actionService === 'Google' && area.actionType === 'email_received') {
       triggered = await this.gmailAction.checkEmailReceived(
         area.userId,
         area.actionConfig,
         area.lastTriggered
       );
-    } else if (area.actionService === 'youtube' && area.actionType === 'new_video') {
+    } else if (area.actionService === 'Google' && area.actionType === 'new_video') {
       triggered = await this.youtubeAction.checkNewVideo(
         area.userId,
         area.actionConfig as { channel_url: string },
@@ -219,7 +219,7 @@ export class HookExecutor {
 
       let message = reactionConfig?.message || 'AREA triggered!';
 
-      if (area.actionService === 'gmail') {
+      if (area.actionService === 'Google') {
         const emailSubject = await this.gmailAction.getLatestEmailSubject(area.userId);
         message = reactionConfig?.message || `📧 New email received: ${emailSubject}`;
       } else if (area.actionService === 'github') {
@@ -261,7 +261,7 @@ export class HookExecutor {
         };
         await this.githubAction.addComment(area.userId, config);
       }
-    } else if (area.reactionService === 'gmail') {
+    } else if (area.reactionService === 'Google') {
       if (area.reactionType === 'send_email') {
         const { to, subject, body } = area.reactionConfig as {
           to: string;
@@ -278,20 +278,32 @@ export class HookExecutor {
       } else if (area.reactionType === 'mark_as_read') {
         const config = area.reactionConfig as { messageId: string };
         await this.gmailService.markAsRead(area.userId, config.messageId);
-      }
-    } else if (area.reactionService === 'youtube') {
-      if (area.reactionType === 'add_to_playlist') {
-        const config = area.reactionConfig as { playlist_id: string; video_id: string };
-        await this.youtubeReaction.addToPlaylist(area.userId, config);
       } else if (area.reactionType === 'like_video') {
         const config = area.reactionConfig as { video_url: string };
-        if (config.video_url) await this.youtubeReaction.likeVideo(area.userId, config.video_url);
+
+        if (!config.video_url) {
+          return;
+        }
+
+        await this.youtubeReaction.likeVideo(area.userId, config.video_url);
       } else if (area.reactionType === 'post_comment') {
         const config = area.reactionConfig as { url: string; comment: string };
-        if (config.url && config.comment)
+
+        if (config.url && config.comment) {
           await this.youtubeReaction.postComment(area.userId, config);
+        } else {
+          console.error(
+            `[Hook Executor] Config invalide pour youtube post_comment (area ${area.id})`
+          );
+        }
+      } else if (area.reactionType === 'add_to_playlist') {
+        const config = area.reactionConfig as { playlist_id: string; video_id: string };
+        await this.youtubeReaction.addToPlaylist(area.userId, config);
       }
-    } else if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
+    }
+
+    // Weather reaction
+    if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
       const config = area.reactionConfig as {
         city: string;
         destination: string;
@@ -332,7 +344,6 @@ export class HookExecutor {
         }
       }
     }
-
     await this.areaService.updateLastTriggered(area.id);
   }
 

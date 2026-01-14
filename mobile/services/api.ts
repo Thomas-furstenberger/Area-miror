@@ -6,8 +6,6 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 
 export const getBaseUrl = async () => {
@@ -16,11 +14,7 @@ export const getBaseUrl = async () => {
     const port = await AsyncStorage.getItem('server_port');
 
     if (!ip) return 'http://localhost:8080';
-
-    if (ip.startsWith('http')) {
-      return ip;
-    }
-
+    if (ip.startsWith('http')) return ip;
     if (!port) return `http://${ip}:8080`;
     return `http://${ip}:${port}`;
   } catch (error) {
@@ -76,26 +70,26 @@ export const fetchAbout = async () => {
   return apiCall('/about.json', 'GET');
 };
 
-export const createArea = async (
-  name: string,
-  actionProvider: string,
-  actionId: string,
-  actionConfig: any,
-  reactionProvider: string,
-  reactionId: string,
-  reactionConfig: any
-) => {
+export const createArea = async (payload: {
+  name: string;
+  action_provider: string;
+  action_id: string;
+  action_params: any;
+  reaction_provider: string;
+  reaction_id: string;
+  reaction_params: any;
+}) => {
   return apiCall('/api/areas', 'POST', {
-    name: name,
+    name: payload.name,
     description: 'Créé depuis le mobile',
 
-    actionService: actionProvider,
-    actionType: actionId,
-    actionConfig: actionConfig,
+    actionService: payload.action_provider,
+    actionType: payload.action_id,
+    actionConfig: payload.action_params,
 
-    reactionService: reactionProvider,
-    reactionType: reactionId,
-    reactionConfig: reactionConfig,
+    reactionService: payload.reaction_provider,
+    reactionType: payload.reaction_id,
+    reactionConfig: payload.reaction_params,
   });
 };
 
@@ -146,8 +140,6 @@ export const getAuthUrl = async (provider: string) => {
     redirect: redirectUrl,
     userToken: token,
   });
-
-  console.log(`[OAuth] State généré : ${stateData}`);
 
   return `${baseUrl}/api/auth/${provider}?state=${encodeURIComponent(stateData)}`;
 };
