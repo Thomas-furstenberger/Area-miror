@@ -147,11 +147,22 @@ export const SERVICES: ServiceConfig[] = [
             required: true,
           },
           {
+            name: 'issue_option',
+            label: 'Quelle issue cibler ?',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'specific', label: 'Une issue spécifique' },
+              { value: 'last', label: 'La dernière issue créée' },
+            ],
+            description: 'Choisissez de cibler une issue précise ou la plus récente.',
+          },
+          {
             name: 'issue_number',
-            label: "Numéro de l'issue",
+            label: "Numéro de l'issue (si spécifique)",
             type: 'number',
             placeholder: '42',
-            required: true,
+            required: false,
           },
           {
             name: 'comment',
