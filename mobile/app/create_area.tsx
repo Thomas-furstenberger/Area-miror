@@ -2,10 +2,10 @@
  ** EPITECH PROJECT, 2026
  ** Area-miror
  ** File description:
- ** create_area
+ ** create_area.tsx
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -34,13 +34,7 @@ interface ConfigField {
   description?: string;
 }
 
-interface Action {
-  name: string;
-  description: string;
-  configFields?: ConfigField[];
-}
-
-interface Reaction {
+interface ActionReaction {
   name: string;
   description: string;
   configFields?: ConfigField[];
@@ -48,11 +42,11 @@ interface Reaction {
 
 interface Service {
   name: string;
-  actions: Action[];
-  reactions: Reaction[];
+  actions: ActionReaction[];
+  reactions: ActionReaction[];
 }
 
-const getServiceIcon = (name: string) => {
+const getServiceIcon = (name: string): keyof typeof Ionicons.glyphMap => {
   const n = name.toLowerCase();
   if (n.includes('github')) return 'logo-github';
   if (n.includes('google') || n.includes('gmail')) return 'logo-google';
@@ -65,7 +59,7 @@ const getServiceIcon = (name: string) => {
   return 'cube';
 };
 
-const getServiceColor = (name: string) => {
+const getServiceColor = (name: string): string => {
   const n = name.toLowerCase();
   if (n.includes('github')) return '#333';
   if (n.includes('google') || n.includes('gmail')) return '#DB4437';
@@ -83,17 +77,16 @@ export default function CreateAreaScreen() {
 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [step, setStep] = useState(1);
   const totalSteps = 7;
 
   const [actionService, setActionService] = useState<Service | null>(null);
-  const [action, setAction] = useState<Action | null>(null);
-  const [actionConfig, setActionConfig] = useState<any>({});
+  const [action, setAction] = useState<ActionReaction | null>(null);
+  const [actionConfig, setActionConfig] = useState<Record<string, any>>({});
 
   const [reactionService, setReactionService] = useState<Service | null>(null);
-  const [reaction, setReaction] = useState<Reaction | null>(null);
-  const [reactionConfig, setReactionConfig] = useState<any>({});
+  const [reaction, setReaction] = useState<ActionReaction | null>(null);
+  const [reactionConfig, setReactionConfig] = useState<Record<string, any>>({});
 
   const [areaName, setAreaName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -110,7 +103,7 @@ export default function CreateAreaScreen() {
       } else {
         Alert.alert('Erreur', 'Impossible de charger les services.');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Erreur', 'Erreur réseau');
     } finally {
       setLoading(false);
@@ -132,12 +125,8 @@ export default function CreateAreaScreen() {
   };
 
   const handleNext = () => {
-    if (step === 3) {
-      if (!validateConfig(action?.configFields, actionConfig)) return;
-    }
-    if (step === 6) {
-      if (!validateConfig(reaction?.configFields, reactionConfig)) return;
-    }
+    if (step === 3 && !validateConfig(action?.configFields, actionConfig)) return;
+    if (step === 6 && !validateConfig(reaction?.configFields, reactionConfig)) return;
     setStep(step + 1);
   };
 
@@ -154,11 +143,7 @@ export default function CreateAreaScreen() {
       if (config.time) {
         let h = 0,
           m = 0;
-        if (
-          typeof config.time === 'string' &&
-          config.time.includes(':') &&
-          !config.time.includes('T')
-        ) {
+        if (typeof config.time === 'string' && config.time.includes(':')) {
           const parts = config.time.split(':');
           h = parseInt(parts[0], 10);
           m = parseInt(parts[1], 10);
@@ -173,37 +158,26 @@ export default function CreateAreaScreen() {
         newConfig.minute = m;
       }
       if (config.date) {
-        const date = new Date(config.date);
-        if (!isNaN(date.getTime())) {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          newConfig.date = `${year}-${month}-${day}`;
-        } else if (typeof config.date === 'string') {
-          newConfig.date = config.date;
-        }
+        newConfig.date =
+          typeof config.date === 'string'
+            ? config.date
+            : new Date(config.date).toISOString().split('T')[0];
       }
       if (config.day) {
         newConfig.dayOfWeek = parseInt(config.day, 10);
       }
     }
 
-    if (p.includes('weather')) {
-      if (config.temperature) {
-        newConfig.temperature = Number(config.temperature);
-      }
+    if (p.includes('weather') && config.temperature) {
+      newConfig.temperature = Number(config.temperature);
     }
 
-    if (p.includes('github')) {
-      if (config.issue_number) {
-        newConfig.issue_number = parseInt(config.issue_number, 10);
-      }
+    if (p.includes('github') && config.issue_number) {
+      newConfig.issue_number = parseInt(config.issue_number, 10);
     }
 
-    if (p.includes('youtube')) {
-      if (newConfig.video_url && !newConfig.video_id) {
-        newConfig.video_id = newConfig.video_url;
-      }
+    if (p.includes('youtube') && newConfig.video_url && !newConfig.video_id) {
+      newConfig.video_id = newConfig.video_url;
     }
 
     return newConfig;
@@ -211,10 +185,7 @@ export default function CreateAreaScreen() {
 
   const getBackendServiceName = (serviceName: string) => {
     const s = serviceName.toLowerCase();
-    if (s === 'gmail' || s === 'youtube') {
-      return 'Google';
-    }
-    return serviceName;
+    return s === 'gmail' || s === 'youtube' ? 'Google' : serviceName;
   };
 
   const handleCreate = async () => {
@@ -224,20 +195,14 @@ export default function CreateAreaScreen() {
     }
     setSubmitting(true);
     try {
-      const cleanActionConfig = formatParams(actionService!.name, actionConfig);
-      const cleanReactionConfig = formatParams(reactionService!.name, reactionConfig);
-
-      const backendActionService = getBackendServiceName(actionService!.name);
-      const backendReactionService = getBackendServiceName(reactionService!.name);
-
       const payload = {
         name: areaName,
-        action_provider: backendActionService,
+        action_provider: getBackendServiceName(actionService!.name),
         action_id: action!.name,
-        action_params: cleanActionConfig,
-        reaction_provider: backendReactionService,
+        action_params: formatParams(actionService!.name, actionConfig),
+        reaction_provider: getBackendServiceName(reactionService!.name),
         reaction_id: reaction!.name,
-        reaction_params: cleanReactionConfig,
+        reaction_params: formatParams(reactionService!.name, reactionConfig),
       };
 
       const res = await createArea(payload);
@@ -248,113 +213,88 @@ export default function CreateAreaScreen() {
       } else {
         Alert.alert('Erreur', res.error || 'Erreur lors de la création.');
       }
-    } catch (e) {
+    } catch {
       Alert.alert('Erreur', 'Erreur réseau critique.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const renderFormFields = (fields: ConfigField[] | undefined, values: any, setValues: any) => {
-    if (!fields || fields.length === 0) {
+  const renderConfigField = (field: ConfigField, values: any, setValues: any) => {
+    if (field.type === 'select') {
       return (
-        <View style={styles.emptyState}>
-          <Ionicons name="checkmark-circle-outline" size={48} color={COLORS.link} />
-          <Text style={styles.emptyText}>Aucune configuration requise.</Text>
+        <View key={field.name} style={styles.inputContainer}>
+          <Text style={styles.label}>
+            {field.label} {field.required && <Text style={styles.requiredStar}>*</Text>}
+          </Text>
+          <View style={styles.selectRow}>
+            {field.options?.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.optionChip,
+                  values[field.name] === opt.value && styles.optionChipSelected,
+                ]}
+                onPress={() => setValues({ ...values, [field.name]: opt.value })}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    values[field.name] === opt.value && styles.optionTextSelected,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       );
     }
 
-    return fields.map((f) => {
-      if (f.type === 'select') {
-        return (
-          <View key={f.name} style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {f.label} {f.required && '*'}
-            </Text>
-            <View style={styles.selectRow}>
-              {f.options?.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.optionChip,
-                    values[f.name] === opt.value && styles.optionChipSelected,
-                  ]}
-                  onPress={() => setValues({ ...values, [f.name]: opt.value })}
-                >
-                  <Text
-                    style={[styles.optionText, values[f.name] === opt.value && { color: '#FFF' }]}
-                  >
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        );
-      }
+    let placeholder = field.placeholder;
+    let keyboardType: 'default' | 'numeric' = 'default';
 
-      if (f.type === 'textarea') {
-        return (
-          <View key={f.name} style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {f.label} {f.required && '*'}
-            </Text>
-            <TextInput
-              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-              multiline
-              placeholder={f.placeholder}
-              value={values[f.name]}
-              onChangeText={(t) => setValues({ ...values, [f.name]: t })}
-            />
-          </View>
-        );
-      }
+    if (field.type === 'time') placeholder = 'Ex: 14:30';
+    if (field.type === 'date') placeholder = 'Ex: 2025-12-31';
+    if (field.type === 'number') keyboardType = 'numeric';
 
-      let placeholder = f.placeholder;
-      let keyboardType: any = 'default';
-
-      if (f.type === 'time') placeholder = 'Ex: 14:30';
-      if (f.type === 'date') placeholder = 'Ex: 2025-12-31';
-      if (f.type === 'number') keyboardType = 'numeric';
-
-      return (
-        <View key={f.name} style={styles.inputContainer}>
-          <Text style={styles.label}>
-            {f.label} {f.required && <Text style={{ color: 'red' }}>*</Text>}
-          </Text>
-          {f.description && <Text style={styles.helperText}>{f.description}</Text>}
-
-          <TextInput
-            style={styles.input}
-            placeholder={placeholder}
-            keyboardType={keyboardType}
-            autoCapitalize="none"
-            value={values[f.name] ? String(values[f.name]) : ''}
-            onChangeText={(t) => setValues({ ...values, [f.name]: t })}
-          />
-        </View>
-      );
-    });
+    return (
+      <View key={field.name} style={styles.inputContainer}>
+        <Text style={styles.label}>
+          {field.label} {field.required && <Text style={styles.requiredStar}>*</Text>}
+        </Text>
+        {field.description && <Text style={styles.helperText}>{field.description}</Text>}
+        <TextInput
+          style={[styles.input, field.type === 'textarea' && styles.textArea]}
+          multiline={field.type === 'textarea'}
+          placeholder={placeholder}
+          keyboardType={keyboardType}
+          autoCapitalize="none"
+          value={values[field.name] ? String(values[field.name]) : ''}
+          onChangeText={(t) => setValues({ ...values, [field.name]: t })}
+        />
+      </View>
+    );
   };
 
   const renderServiceCard = (s: Service, onPress: () => void) => (
     <TouchableOpacity key={s.name} style={styles.card} onPress={onPress}>
       <View style={[styles.iconBox, { backgroundColor: getServiceColor(s.name) + '20' }]}>
-        <Ionicons name={getServiceIcon(s.name) as any} size={28} color={getServiceColor(s.name)} />
+        <Ionicons name={getServiceIcon(s.name)} size={28} color={getServiceColor(s.name)} />
       </View>
-      <View style={{ flex: 1, marginLeft: 15 }}>
+      <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{s.name.charAt(0).toUpperCase() + s.name.slice(1)}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#CCC" />
     </TouchableOpacity>
   );
 
-  const renderItemCard = (key: string, title: string, desc: string, onPress: () => void) => (
-    <TouchableOpacity key={key} style={styles.card} onPress={onPress}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSub}>{desc}</Text>
+  const renderItemCard = (item: ActionReaction, onPress: () => void) => (
+    <TouchableOpacity key={item.name} style={styles.card} onPress={onPress}>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{item.name}</Text>
+        <Text style={styles.cardSub}>{item.description}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#CCC" />
     </TouchableOpacity>
@@ -376,39 +316,33 @@ export default function CreateAreaScreen() {
               )}
           </View>
         );
-
       case 2:
         return (
           <View>
             <Text style={styles.headerTitle}>Quel événement ?</Text>
-            <View style={styles.selectedBadge}>
-              <Ionicons name={getServiceIcon(actionService!.name) as any} size={16} color="#555" />
-              <Text style={styles.badgeText}>{actionService?.name}</Text>
-            </View>
             {actionService?.actions.map((a) =>
-              renderItemCard(a.name, a.name, a.description, () => {
+              renderItemCard(a, () => {
                 setAction(a);
                 handleNext();
               })
             )}
           </View>
         );
-
       case 3:
         return (
           <View>
-            <Text style={styles.headerTitle}>Configuration de l'Action</Text>
-            <Text style={styles.subHeader}>Paramétrez : {action?.description}</Text>
+            <Text style={styles.headerTitle}>Configuration Action</Text>
             <View style={styles.formBox}>
-              {renderFormFields(action?.configFields, actionConfig, setActionConfig)}
+              {action?.configFields?.map((f) =>
+                renderConfigField(f, actionConfig, setActionConfig)
+              )}
             </View>
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <Text style={styles.nextButtonText}>Valider et Continuer</Text>
+              <Text style={styles.nextButtonText}>Valider</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
         );
-
       case 4:
         return (
           <View>
@@ -423,69 +357,42 @@ export default function CreateAreaScreen() {
               )}
           </View>
         );
-
       case 5:
         return (
           <View>
             <Text style={styles.headerTitle}>Quelle réaction ?</Text>
-            <View style={styles.selectedBadge}>
-              <Ionicons
-                name={getServiceIcon(reactionService!.name) as any}
-                size={16}
-                color="#555"
-              />
-              <Text style={styles.badgeText}>{reactionService?.name}</Text>
-            </View>
             {reactionService?.reactions.map((r) =>
-              renderItemCard(r.name, r.name, r.description, () => {
+              renderItemCard(r, () => {
                 setReaction(r);
                 handleNext();
               })
             )}
           </View>
         );
-
       case 6:
         return (
           <View>
-            <Text style={styles.headerTitle}>Configuration de la Réaction</Text>
-            <Text style={styles.subHeader}>Paramétrez : {reaction?.description}</Text>
+            <Text style={styles.headerTitle}>Configuration Réaction</Text>
             <View style={styles.formBox}>
-              {renderFormFields(reaction?.configFields, reactionConfig, setReactionConfig)}
+              {reaction?.configFields?.map((f) =>
+                renderConfigField(f, reactionConfig, setReactionConfig)
+              )}
             </View>
             <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <Text style={styles.nextButtonText}>Valider et Continuer</Text>
+              <Text style={styles.nextButtonText}>Valider</Text>
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
         );
-
       case 7:
         return (
           <View>
-            <Text style={styles.headerTitle}>Résumé et Nommage</Text>
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.ifText}>SI</Text>
-                <View style={styles.summaryContent}>
-                  <Text style={styles.summaryService}>{actionService?.name}</Text>
-                  <Text style={styles.summaryDesc}>{action?.description}</Text>
-                </View>
-              </View>
-              <View style={styles.connectorLine} />
-              <View style={styles.summaryRow}>
-                <Text style={styles.thenText}>ALORS</Text>
-                <View style={styles.summaryContent}>
-                  <Text style={styles.summaryService}>{reactionService?.name}</Text>
-                  <Text style={styles.summaryDesc}>{reaction?.description}</Text>
-                </View>
-              </View>
-            </View>
+            <Text style={styles.headerTitle}>Résumé</Text>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Nom de l'automation</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Alerte Météo vers Discord"
+                placeholder="Ex: Sync GitHub vers Discord"
                 value={areaName}
                 onChangeText={setAreaName}
               />
@@ -498,20 +405,23 @@ export default function CreateAreaScreen() {
               {submitting ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.createButtonText}>Lancer l'Automation</Text>
+                <Text style={styles.createButtonText}>Lancer</Text>
               )}
             </TouchableOpacity>
           </View>
         );
+      default:
+        return null;
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={COLORS.link} />
       </View>
     );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -527,11 +437,9 @@ export default function CreateAreaScreen() {
             Étape {step} sur {totalSteps}
           </Text>
         </View>
-
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { width: `${(step / totalSteps) * 100}%` }]} />
         </View>
-
         <ScrollView contentContainerStyle={styles.scrollContent}>{renderContent()}</ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

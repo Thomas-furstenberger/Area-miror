@@ -1,3 +1,10 @@
+/*
+ ** EPITECH PROJECT, 2026
+ ** Area-miror
+ ** File description:
+ ** explore.tsx
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
@@ -41,8 +48,8 @@ export default function ExploreScreen() {
         const providers = accountsRes.data.accounts.map((acc: any) => acc.provider.toLowerCase());
         setConnectedAccounts(providers);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Silent error
     } finally {
       setLoading(false);
     }
@@ -58,7 +65,12 @@ export default function ExploreScreen() {
     const n = technicalName.toLowerCase();
 
     if (n === 'gmail') {
-      return { label: 'Google', icon: 'logo-google', color: '#DB4437', bg: '#FEF2F2' };
+      return {
+        label: 'Google',
+        icon: 'logo-google',
+        color: '#DB4437',
+        bg: '#FEF2F2',
+      };
     }
 
     if (n.includes('github'))
@@ -81,20 +93,15 @@ export default function ExploreScreen() {
     const n = serviceName.toLowerCase();
 
     if (['timer', 'weather', 'chuck'].includes(n)) return true;
-
     if (n === 'gmail' && connectedAccounts.includes('google')) return true;
 
     return connectedAccounts.includes(n);
   };
 
   const handleServicePress = async (serviceName: string) => {
-    if (['timer', 'weather', 'chuck'].includes(serviceName)) {
-      Alert.alert('Info', 'Ce service est actif par défaut.');
-      return;
-    }
+    if (['timer', 'weather', 'chuck'].includes(serviceName)) return;
 
     let targetProvider = serviceName;
-
     let disconnectProvider = serviceName;
     if (serviceName === 'gmail') disconnectProvider = 'google';
 
@@ -116,12 +123,11 @@ export default function ExploreScreen() {
       setProcessing(serviceName);
       try {
         const authUrl = await getAuthUrl(targetProvider);
-
         const result = await WebBrowser.openAuthSessionAsync(authUrl);
         if (result.type === 'success' || result.type === 'dismiss') {
           setTimeout(loadData, 1500);
         }
-      } catch (e) {
+      } catch {
         Alert.alert('Erreur', 'Connexion impossible');
       } finally {
         setProcessing(null);
@@ -161,6 +167,7 @@ export default function ExploreScreen() {
               const config = getServiceConfig(technicalName);
               const active = isConnected(technicalName);
               const isProcessing = processing === technicalName;
+              const isNative = ['timer', 'weather', 'chuck'].includes(technicalName);
 
               return (
                 <TouchableOpacity
@@ -168,13 +175,9 @@ export default function ExploreScreen() {
                   style={[styles.card, active ? styles.cardConnected : styles.cardDisconnected]}
                   onPress={() => !isProcessing && handleServicePress(technicalName)}
                   disabled={isProcessing}
+                  activeOpacity={isNative ? 1 : 0.7}
                 >
-                  {isProcessing && (
-                    <ActivityIndicator
-                      color={config.color}
-                      style={{ position: 'absolute', top: 10, right: 10 }}
-                    />
-                  )}
+                  {isProcessing && <ActivityIndicator color={config.color} style={styles.loader} />}
 
                   <View
                     style={[styles.iconContainer, { backgroundColor: active ? '#FFF' : '#F9FAFB' }]}
@@ -193,16 +196,24 @@ export default function ExploreScreen() {
                   <View
                     style={[
                       styles.badge,
-                      active ? styles.badgeConnected : styles.badgeDisconnected,
+                      active
+                        ? isNative
+                          ? styles.badgeNative
+                          : styles.badgeConnected
+                        : styles.badgeDisconnected,
                     ]}
                   >
                     <Text
                       style={[
                         styles.badgeText,
-                        active ? { color: '#047857' } : { color: '#6B7280' },
+                        active
+                          ? isNative
+                            ? { color: '#4B5563' }
+                            : { color: '#047857' }
+                          : { color: '#6B7280' },
                       ]}
                     >
-                      {active ? 'Connecté' : 'Relier'}
+                      {active ? (isNative ? 'Natif' : 'Connecté') : 'Relier'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -221,7 +232,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
     paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
-
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -229,18 +239,15 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#FAFAFA',
   },
-
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#111827',
   },
-
   headerSubtitle: {
     fontSize: 14,
     color: '#6B7280',
   },
-
   logoutButton: {
     width: 40,
     height: 40,
@@ -249,18 +256,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   scrollContent: {
     paddingHorizontal: PADDING,
     paddingBottom: 100,
   },
-
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: GAP,
   },
-
   card: {
     width: ITEM_WIDTH,
     borderRadius: 20,
@@ -269,19 +273,16 @@ const styles = StyleSheet.create({
     marginBottom: GAP,
     borderWidth: 1,
   },
-
   cardConnected: {
     backgroundColor: '#FFFFFF',
     borderColor: '#E5E7EB',
     elevation: 2,
   },
-
   cardDisconnected: {
     backgroundColor: '#F9FAFB',
     borderColor: '#E5E7EB',
     borderStyle: 'dashed',
   },
-
   iconContainer: {
     width: 56,
     height: 56,
@@ -292,31 +293,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6',
   },
-
   serviceName: {
     fontWeight: 'bold',
     fontSize: 15,
     color: '#1F2937',
     marginBottom: 10,
   },
-
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
   },
-
   badgeConnected: {
     backgroundColor: '#ECFDF5',
   },
-
+  badgeNative: {
+    backgroundColor: '#F3F4F6',
+  },
   badgeDisconnected: {
     backgroundColor: '#E5E7EB',
   },
-
   badgeText: {
     fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  loader: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 });
