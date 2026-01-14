@@ -1,14 +1,30 @@
 /*
- ** EPITECH PROJECT, 2025
+ ** EPITECH PROJECT, 2026
  ** Area-miror
  ** File description:
- ** api
+ ** api.ts
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 
-export const getBaseUrl = async () => {
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+interface AreaPayload {
+  name: string;
+  action_provider: string;
+  action_id: string;
+  action_params: Record<string, any>;
+  reaction_provider: string;
+  reaction_id: string;
+  reaction_params: Record<string, any>;
+}
+
+export const getBaseUrl = async (): Promise<string> => {
   try {
     const ip = await AsyncStorage.getItem('server_ip');
     const port = await AsyncStorage.getItem('server_port');
@@ -17,20 +33,20 @@ export const getBaseUrl = async () => {
     if (ip.startsWith('http')) return ip;
     if (!port) return `http://${ip}:8080`;
     return `http://${ip}:${port}`;
-  } catch (error) {
+  } catch {
     return 'http://localhost:8080';
   }
 };
 
-export const apiCall = async (
+export const apiCall = async <T = any>(
   endpoint: string,
   method: 'GET' | 'POST' | 'DELETE' = 'GET',
-  body?: any
-) => {
+  body?: unknown
+): Promise<ApiResponse<T>> => {
   const baseUrl = await getBaseUrl();
   const url = `${baseUrl}${endpoint}`;
 
-  const headers: any = {
+  const headers: Record<string, string> = {
     Accept: 'application/json',
   };
 
@@ -49,8 +65,6 @@ export const apiCall = async (
     body: body ? JSON.stringify(body) : undefined,
   };
 
-  console.log(`[API] ${method} ${url}`);
-
   try {
     const response = await fetch(url, config);
     const data = await response.json().catch(() => ({}));
@@ -61,8 +75,7 @@ export const apiCall = async (
 
     return { success: true, data };
   } catch (error: any) {
-    console.error(`[API Error] ${endpoint}:`, error.message);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Erreur inconnue' };
   }
 };
 
@@ -70,23 +83,13 @@ export const fetchAbout = async () => {
   return apiCall('/about.json', 'GET');
 };
 
-export const createArea = async (payload: {
-  name: string;
-  action_provider: string;
-  action_id: string;
-  action_params: any;
-  reaction_provider: string;
-  reaction_id: string;
-  reaction_params: any;
-}) => {
+export const createArea = async (payload: AreaPayload) => {
   return apiCall('/api/areas', 'POST', {
     name: payload.name,
     description: 'Créé depuis le mobile',
-
     actionService: payload.action_provider,
     actionType: payload.action_id,
     actionConfig: payload.action_params,
-
     reactionService: payload.reaction_provider,
     reactionType: payload.reaction_id,
     reactionConfig: payload.reaction_params,
@@ -97,27 +100,15 @@ export const getUserAreas = async () => {
   return apiCall('/api/areas', 'GET');
 };
 
-export const deleteAutomation = async (id: string) => {
-  return apiCall(`/api/areas/${id}`, 'DELETE');
-};
-
 export const deleteArea = async (id: string) => {
   return apiCall(`/api/areas/${id}`, 'DELETE');
 };
 
-export const login = async (email: string, password: string) => {
-  return apiCall('/api/auth/login', 'POST', { email, password });
-};
-
-export const register = async (email: string, password: string, name: string) => {
-  return apiCall('/api/auth/register', 'POST', { email, password, name });
-};
-
-export const logoutUser = async () => {
+export const logoutUser = async (): Promise<boolean> => {
   try {
     await AsyncStorage.removeItem('user_token');
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -126,7 +117,7 @@ export const getConnectedAccounts = async () => {
   return apiCall('/api/user/oauth-accounts', 'GET');
 };
 
-export const getAuthUrl = async (provider: string) => {
+export const getAuthUrl = async (provider: string): Promise<string> => {
   const baseUrl = await getBaseUrl();
   let redirectUrl = Linking.createURL('/login/success');
 
@@ -135,7 +126,6 @@ export const getAuthUrl = async (provider: string) => {
   }
 
   const token = await AsyncStorage.getItem('user_token');
-
   const stateData = JSON.stringify({
     redirect: redirectUrl,
     userToken: token,

@@ -265,28 +265,34 @@ Runs every 2 minutes and:
 3. Triggers corresponding reaction (e.g., send Discord message)
 4. Prevents duplicates with timestamp tracking
 
-## 📦 API Endpoints
+## 📦 API Documentation
 
-### Authentication
+### API Endpoints
 
-- `GET /api/auth/gmail` - Gmail OAuth
-- `GET /api/auth/github` - GitHub OAuth
-- `GET /api/auth/discord` - Discord OAuth
-- `POST /api/auth/login` - Email/password login
-- `POST /api/auth/register` - Create account
+#### Authentication
+- `POST /api/auth/register` - Créer un compte
+- `POST /api/auth/login` - Connexion email/password
+- `GET /api/auth/user` - Obtenir l'utilisateur connecté
+- `POST /api/auth/logout` - Déconnexion
 
-### AREAs
+#### OAuth
+- `GET /api/auth/gmail` - OAuth Gmail/Google
+- `GET /api/auth/github` - OAuth GitHub
+- `GET /api/auth/discord` - OAuth Discord
+- `GET /api/auth/spotify` - OAuth Spotify
 
-- `GET /api/areas` - List user's AREAs
-- `POST /api/areas` - Create new AREA
-- `GET /api/areas/:id` - Get specific AREA
-- `PATCH /api/areas/:id/toggle` - Enable/disable AREA
-- `DELETE /api/areas/:id` - Delete AREA
+#### AREAs (Automatisations)
+- `GET /api/areas` - Liste des AREAs de l'utilisateur
+- `POST /api/areas` - Créer une nouvelle AREA
+- `PUT /api/areas/:id/toggle` - Activer/Désactiver une AREA
+- `DELETE /api/areas/:id` - Supprimer une AREA
 
-### Info
+#### Services
+- `GET /about.json` - Configuration des services (Actions/REActions)
 
-- `GET /about.json` - Service configuration for mobile
-- `GET /health` - Health check
+#### Health
+- `GET /` - Message de bienvenue
+- `GET /health` - Status du serveur
 
 ## 👥 Team
 

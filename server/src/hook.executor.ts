@@ -21,6 +21,7 @@ import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';
 import { GithubAction } from './actions/github.action';
+import { GithubReaction } from './reactions/github.reaction';
 import { DiscordReaction } from './reactions/discord.reaction';
 import { GmailService } from './reactions/gmail.reaction';
 import { YoutubeAction } from './actions/youtube.action';
@@ -36,6 +37,7 @@ export class HookExecutor {
   private gmailAction: GmailAction;
   private timerAction: TimerAction;
   private githubAction: GithubAction;
+  private githubReaction: GithubReaction;
   private discordReaction: DiscordReaction;
   private gmailService: GmailService;
   private isRunning: boolean = false;
@@ -55,6 +57,7 @@ export class HookExecutor {
     this.timerAction = new TimerAction();
     this.youtubeAction = new YoutubeAction(prisma);
     this.githubAction = new GithubAction(prisma);
+    this.githubReaction = new GithubReaction(prisma);
     this.discordReaction = new DiscordReaction();
     this.gmailService = new GmailService(prisma);
     this.weatherAction = new WeatherAction();
@@ -251,15 +254,16 @@ export class HookExecutor {
           title: string;
           body: string;
         };
-        await this.githubAction.createIssue(area.userId, config);
+        await this.githubReaction.createIssue(area.userId, config);
       } else if (area.reactionType === 'add_comment') {
         const config = area.reactionConfig as {
           repo_owner: string;
           repo_name: string;
-          issue_number: number;
+          issue_number?: number;
+          issue_option: 'specific' | 'last';
           comment: string;
         };
-        await this.githubAction.addComment(area.userId, config);
+        await this.githubReaction.addComment(area.userId, config);
       }
     } else if (area.reactionService === 'Google') {
       if (area.reactionType === 'send_email') {
