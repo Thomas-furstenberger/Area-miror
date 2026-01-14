@@ -132,18 +132,18 @@ export default function CreateAreaPage() {
       const response = await fetch(`${API_URL}/about.json`);
       if (!response.ok) throw new Error('Failed to fetch services');
       const data = await response.json();
-      
+
       const rawServices = data.server?.services || [];
       const normalizedServices = rawServices.map((service: any) => ({
         ...service,
         actions: service.actions.map((action: any) => ({
           ...action,
-          configFields: action.configFields || action.args || action.params || []
+          configFields: action.configFields || action.args || action.params || [],
         })),
         reactions: service.reactions.map((reaction: any) => ({
           ...reaction,
-          configFields: reaction.configFields || reaction.args || reaction.params || []
-        }))
+          configFields: reaction.configFields || reaction.args || reaction.params || [],
+        })),
       }));
 
       setServices(normalizedServices);
@@ -209,7 +209,7 @@ export default function CreateAreaPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || 'Erreur lors de la création de l\'AREA');
+        throw new Error(data.message || data.error || "Erreur lors de la création de l'AREA");
       }
 
       setSuccess(true);
@@ -298,7 +298,9 @@ export default function CreateAreaPage() {
             type="number"
             required={field.required}
             value={displayValue}
-            onChange={(e) => onChange(field.name, e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              onChange(field.name, e.target.value === '' ? '' : Number(e.target.value))
+            }
             placeholder={field.placeholder}
             className={baseClasses}
           />
