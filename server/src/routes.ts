@@ -1151,8 +1151,8 @@ export async function registerRoutes(
             },
             actionService: {
               type: 'string',
-              description: 'Service providing the trigger (e.g., "gmail", "github", "discord")',
-              enum: ['gmail', 'github', 'discord', 'youtube', 'spotify', 'openweather', 'time'],
+              description: 'Service providing the trigger',
+              enum: ['github', 'Google', 'timer', 'discord', 'weather', 'spotify'],
             },
             actionType: {
               type: 'string',
@@ -1166,8 +1166,8 @@ export async function registerRoutes(
             },
             reactionService: {
               type: 'string',
-              description: 'Service executing the reaction (e.g., "gmail", "discord")',
-              enum: ['gmail', 'github', 'discord', 'youtube', 'spotify'],
+              description: 'Service executing the reaction',
+              enum: ['github', 'Google', 'discord', 'weather', 'spotify'],
             },
             reactionType: {
               type: 'string',

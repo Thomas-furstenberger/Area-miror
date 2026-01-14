@@ -132,7 +132,21 @@ export default function CreateAreaPage() {
       const response = await fetch(`${API_URL}/about.json`);
       if (!response.ok) throw new Error('Failed to fetch services');
       const data = await response.json();
-      setServices(data.server?.services || []);
+      
+      const rawServices = data.server?.services || [];
+      const normalizedServices = rawServices.map((service: any) => ({
+        ...service,
+        actions: service.actions.map((action: any) => ({
+          ...action,
+          configFields: action.configFields || action.args || action.params || []
+        })),
+        reactions: service.reactions.map((reaction: any) => ({
+          ...reaction,
+          configFields: reaction.configFields || reaction.args || reaction.params || []
+        }))
+      }));
+
+      setServices(normalizedServices);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load services');
     } finally {
@@ -172,27 +186,30 @@ export default function CreateAreaPage() {
         }
       }
 
+      const payload = {
+        name: areaName,
+        description: areaDescription || undefined,
+        actionService: selectedActionService,
+        actionType: selectedAction,
+        actionConfig: finalActionConfig,
+        reactionService: selectedReactionService,
+        reactionType: selectedReaction,
+        reactionConfig: reactionConfig,
+      };
+
       const response = await fetch(`${API_URL}/api/areas`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: areaName,
-          description: areaDescription,
-          actionService: selectedActionService,
-          actionType: selectedAction,
-          actionConfig: finalActionConfig,
-          reactionService: selectedReactionService,
-          reactionType: selectedReaction,
-          reactionConfig: reactionConfig,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create AREA');
+        throw new Error(data.message || data.error || 'Erreur lors de la création de l\'AREA');
       }
 
       setSuccess(true);
@@ -200,7 +217,8 @@ export default function CreateAreaPage() {
         navigate('/areas');
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setCreating(false);
     }
@@ -244,12 +262,14 @@ export default function CreateAreaPage() {
         : 'focus:border-purple-500 focus:ring-purple-500/20';
     const baseClasses = `w-full px-4 py-3 bg-white/50 border-2 border-secondary/30 rounded-xl ${focusColor} focus:ring-4 focus:outline-none transition-all duration-200`;
 
+    const displayValue = value !== undefined && value !== null ? String(value) : '';
+
     switch (field.type) {
       case 'textarea':
         return (
           <textarea
             required={field.required}
-            value={String(value || '')}
+            value={displayValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             rows={3}
@@ -260,7 +280,7 @@ export default function CreateAreaPage() {
         return (
           <select
             required={field.required}
-            value={String(value || '')}
+            value={displayValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${baseClasses} bg-white`}
           >
@@ -272,12 +292,23 @@ export default function CreateAreaPage() {
             ))}
           </select>
         );
+      case 'number':
+        return (
+          <input
+            type="number"
+            required={field.required}
+            value={displayValue}
+            onChange={(e) => onChange(field.name, e.target.value === '' ? '' : Number(e.target.value))}
+            placeholder={field.placeholder}
+            className={baseClasses}
+          />
+        );
       default:
         return (
           <input
             type={field.type}
             required={field.required}
-            value={String(value || '')}
+            value={displayValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             placeholder={field.placeholder}
             className={baseClasses}
@@ -288,7 +319,6 @@ export default function CreateAreaPage() {
 
   const isFormValid = areaName && selectedAction && selectedReaction;
 
-  // Steps indicator
   const steps = [
     { num: 1, label: 'Nom', completed: !!areaName },
     { num: 2, label: 'Action', completed: !!selectedAction },
@@ -300,9 +330,7 @@ export default function CreateAreaPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* Hero Header */}
       <section className="relative bg-gradient-to-br from-primary via-primary to-dark py-16 overflow-hidden">
-        {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             className="absolute top-10 left-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"
@@ -340,7 +368,6 @@ export default function CreateAreaPage() {
               Connectez une action à une réaction pour automatiser vos tâches en quelques clics
             </p>
 
-            {/* Progress Steps */}
             <div className="mt-10 flex justify-center">
               <div className="flex items-center gap-2 md:gap-4 bg-white/10 backdrop-blur-sm rounded-full px-4 py-3">
                 {steps.map((step, index) => (
@@ -403,28 +430,18 @@ export default function CreateAreaPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="relative bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-3xl p-12 text-center overflow-hidden"
             >
-              {/* Success particles */}
               {[...Array(20)].map((_, i) => (
                 <motion.div
                   key={i}
                   className="absolute w-2 h-2 bg-green-400 rounded-full"
-                  initial={{
-                    x: '50%',
-                    y: '50%',
-                    opacity: 1,
-                    scale: 0,
-                  }}
+                  initial={{ x: '50%', y: '50%', opacity: 1, scale: 0 }}
                   animate={{
                     x: `${Math.random() * 100}%`,
                     y: `${Math.random() * 100}%`,
                     opacity: 0,
                     scale: 1,
                   }}
-                  transition={{
-                    duration: 1.5,
-                    delay: i * 0.05,
-                    ease: 'easeOut',
-                  }}
+                  transition={{ duration: 1.5, delay: i * 0.05, ease: 'easeOut' }}
                 />
               ))}
 
@@ -456,7 +473,6 @@ export default function CreateAreaPage() {
               onSubmit={handleSubmit}
               className="space-y-8"
             >
-              {/* Area Name Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -502,9 +518,7 @@ export default function CreateAreaPage() {
                 </div>
               </motion.div>
 
-              {/* Action & Reaction Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
-                {/* Arrow connector for desktop */}
                 <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                   <motion.div
                     className="bg-white p-4 rounded-full shadow-xl border-2 border-primary"
@@ -610,13 +624,13 @@ export default function CreateAreaPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="pt-5 border-t-2 border-blue-100"
+                          className="pt-5 border-t-2 border-blue-100 overflow-hidden"
                         >
                           <h4 className="font-semibold text-sm text-blue-600 mb-4 flex items-center gap-2">
                             <Settings className="w-4 h-4" />
                             Configuration
                           </h4>
-                          <div className="space-y-4">
+                          <div className="space-y-4 pb-2">
                             {getSelectedActionConfig().map((field) => (
                               <div key={field.name}>
                                 <label className="block text-sm font-semibold text-text mb-2">
@@ -643,7 +657,6 @@ export default function CreateAreaPage() {
                   </div>
                 </motion.div>
 
-                {/* Mobile Arrow */}
                 <div className="flex lg:hidden justify-center -my-2">
                   <motion.div
                     className="bg-white p-3 rounded-full shadow-lg border-2 border-primary rotate-90"
@@ -740,13 +753,13 @@ export default function CreateAreaPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="pt-5 border-t-2 border-purple-100"
+                          className="pt-5 border-t-2 border-purple-100 overflow-hidden"
                         >
                           <h4 className="font-semibold text-sm text-purple-600 mb-4 flex items-center gap-2">
                             <Settings className="w-4 h-4" />
                             Configuration
                           </h4>
-                          <div className="space-y-4">
+                          <div className="space-y-4 pb-2">
                             {getSelectedReactionConfig().map((field) => (
                               <div key={field.name}>
                                 <label className="block text-sm font-semibold text-text mb-2">
@@ -778,7 +791,6 @@ export default function CreateAreaPage() {
                 </motion.div>
               </div>
 
-              {/* Error Message */}
               <AnimatePresence>
                 {error && (
                   <motion.div
@@ -790,12 +802,11 @@ export default function CreateAreaPage() {
                     <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <AlertCircle className="w-5 h-5 text-red-600" />
                     </div>
-                    <p className="text-red-700 font-medium">{error}</p>
+                    <p className="text-red-700 font-medium break-words">{error}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Submit Buttons */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
