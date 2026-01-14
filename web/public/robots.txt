@@ -1,0 +1,6 @@
+# Robots.txt for AREA
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://area.example.com/sitemap.xml

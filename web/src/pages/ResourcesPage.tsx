@@ -287,6 +287,8 @@ export default function ResourcesPage() {
                   <img
                     src={resource.image}
                     alt={resource.title}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {resource.popular && (
@@ -317,7 +319,7 @@ export default function ResourcesPage() {
 
           {filteredResources.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-text/50 text-lg">Aucune ressource trouvée pour cette recherche.</p>
+              <p className="text-text/70 text-lg">Aucune ressource trouvée pour cette recherche.</p>
             </div>
           )}
         </section>
@@ -353,6 +355,8 @@ export default function ResourcesPage() {
                     <img
                       src={video.thumbnail}
                       alt={video.title}
+                      width={400}
+                      height={225}
                       className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -367,7 +371,7 @@ export default function ResourcesPage() {
                   <h3 className="font-semibold text-text group-hover:text-primary transition-colors mb-1">
                     {video.title}
                   </h3>
-                  <p className="text-text/50 text-sm">{video.views} vues</p>
+                  <p className="text-text/70 text-sm">{video.views} vues</p>
                 </motion.div>
               ))}
             </div>

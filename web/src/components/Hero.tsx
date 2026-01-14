@@ -140,7 +140,7 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-8 text-text/50 text-sm"
+            className="flex flex-wrap items-center justify-center gap-8 text-text/70 text-sm"
           >
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
@@ -172,7 +172,7 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
               </div>
               <div>
                 <p className="font-semibold text-text text-sm">GitHub</p>
-                <p className="text-xs text-text/50">Nouveau commit détecté</p>
+                <p className="text-xs text-text/70">Nouveau commit détecté</p>
               </div>
             </div>
           </motion.div>
@@ -193,7 +193,7 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
               </div>
               <div>
                 <p className="font-semibold text-text text-sm">Discord</p>
-                <p className="text-xs text-text/50">Message envoyé ✓</p>
+                <p className="text-xs text-text/70">Message envoyé ✓</p>
               </div>
             </div>
           </motion.div>
@@ -219,7 +219,7 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
               </div>
               <div>
                 <p className="font-semibold text-text text-sm">Gmail</p>
-                <p className="text-xs text-text/50">3 nouveaux emails</p>
+                <p className="text-xs text-text/70">3 nouveaux emails</p>
               </div>
             </div>
           </motion.div>

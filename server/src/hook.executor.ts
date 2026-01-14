@@ -16,6 +16,7 @@ type Area = {
   createdAt: Date;
   updatedAt: Date;
 };
+
 import { AreaService } from './area.service';
 import { GmailAction } from './actions/gmail.action';
 import { TimerAction } from './actions/timer.action';
@@ -27,6 +28,8 @@ import { WeatherAction } from './actions/weather.action';
 import { WeatherReaction } from './reactions/weather.reaction';
 import { DiscordAction } from './actions/discord.action';
 import { YoutubeReaction } from './reactions/youtube.reaction';
+import { SpotifyAction } from './actions/spotify.action';
+import { SpotifyService } from './reactions/spotify.reaction';
 
 export class HookExecutor {
   private areaService: AreaService;
@@ -43,6 +46,8 @@ export class HookExecutor {
   private weatherReaction: WeatherReaction;
   private discordAction: DiscordAction;
   private youtubeReaction: YoutubeReaction;
+  private spotifyAction: SpotifyAction;
+  private spotifyService: SpotifyService;
 
   constructor(private prisma: PrismaClient) {
     this.areaService = new AreaService(prisma);
@@ -56,6 +61,8 @@ export class HookExecutor {
     this.weatherReaction = new WeatherReaction();
     this.discordAction = new DiscordAction(prisma);
     this.youtubeReaction = new YoutubeReaction(prisma);
+    this.spotifyAction = new SpotifyAction(prisma);
+    this.spotifyService = new SpotifyService(prisma);
   }
 
   async execute() {
@@ -120,6 +127,12 @@ export class HookExecutor {
       triggered = await this.youtubeAction.checkNewVideo(
         area.userId,
         area.actionConfig as { channel_url: string },
+        area.lastTriggered
+      );
+    } else if (area.actionService === 'spotify' && area.actionType === 'new_saved_track') {
+      triggered = await this.spotifyAction.checkNewSavedTrack(
+        area.userId,
+        area.actionConfig,
         area.lastTriggered
       );
     } else if (area.actionService === 'github') {
@@ -218,9 +231,18 @@ export class HookExecutor {
             reactionConfig?.message ||
             `⏰ Time alert: ${hour}:${minute.toString().padStart(2, '0')}`;
         }
+      } else if (area.actionService === 'spotify') {
+        message = reactionConfig?.message || `🎵 New track liked on Spotify!`;
       }
 
       await this.discordReaction.sendMessage(webhookUrl, message);
+    } else if (area.reactionService === 'spotify') {
+      if (area.reactionType === 'skip_track') {
+        await this.spotifyService.skipTrack(area.userId);
+      } else if (area.reactionType === 'play_playlist') {
+        const config = area.reactionConfig as { playlist_uri: string };
+        await this.spotifyService.playPlaylist(area.userId, config);
+      }
     } else if (area.reactionService === 'github') {
       if (area.reactionType === 'create_issue') {
         const config = area.reactionConfig as {
@@ -257,9 +279,18 @@ export class HookExecutor {
         const config = area.reactionConfig as { messageId: string };
         await this.gmailService.markAsRead(area.userId, config.messageId);
       }
-    } else if (area.reactionService === 'youtube' && area.reactionType === 'add_to_playlist') {
-      const config = area.reactionConfig as { playlist_id: string; video_id: string };
-      await this.youtubeReaction.addToPlaylist(area.userId, config);
+    } else if (area.reactionService === 'youtube') {
+      if (area.reactionType === 'add_to_playlist') {
+        const config = area.reactionConfig as { playlist_id: string; video_id: string };
+        await this.youtubeReaction.addToPlaylist(area.userId, config);
+      } else if (area.reactionType === 'like_video') {
+        const config = area.reactionConfig as { video_url: string };
+        if (config.video_url) await this.youtubeReaction.likeVideo(area.userId, config.video_url);
+      } else if (area.reactionType === 'post_comment') {
+        const config = area.reactionConfig as { url: string; comment: string };
+        if (config.url && config.comment)
+          await this.youtubeReaction.postComment(area.userId, config);
+      }
     } else if (area.reactionService === 'weather' && area.reactionType === 'send_weather_info') {
       const config = area.reactionConfig as {
         city: string;
@@ -284,7 +315,7 @@ export class HookExecutor {
         if (!emailTo) {
           const user = await this.prisma.user.findUnique({
             where: { id: area.userId },
-            select: { email: true }
+            select: { email: true },
           });
           emailTo = user?.email;
         }
@@ -299,24 +330,6 @@ export class HookExecutor {
         } else {
           console.error(`[Hook Executor] No email found for user ${area.userId}`);
         }
-      }
-    } else if (area.reactionService === 'youtube' && area.reactionType === 'like_video') {
-      const config = area.reactionConfig as { video_url: string };
-
-      if (!config.video_url) {
-        return;
-      }
-
-      await this.youtubeReaction.likeVideo(area.userId, config.video_url);
-    } else if (area.reactionService === 'youtube' && area.reactionType === 'post_comment') {
-      const config = area.reactionConfig as { url: string; comment: string };
-
-      if (config.url && config.comment) {
-        await this.youtubeReaction.postComment(area.userId, config);
-      } else {
-        console.error(
-          `[Hook Executor] Config invalide pour youtube post_comment (area ${area.id})`
-        );
       }
     }
 
@@ -338,7 +351,6 @@ export class HookExecutor {
 
   startWithSeconds(intervalSeconds: number = 15) {
     console.log(`[Hook Executor] Starting with ${intervalSeconds} second interval`);
-
     this.execute();
 
     this.intervalId = setInterval(() => {

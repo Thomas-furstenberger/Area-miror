@@ -110,6 +110,8 @@ export default function Navbar() {
                         <img
                           src={user.avatarUrl}
                           alt={user.name}
+                          width={32}
+                          height={32}
                           className="h-full w-full object-cover"
                         />
                       ) : (
@@ -120,10 +122,10 @@ export default function Navbar() {
                     </div>
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-semibold text-text">{user.name}</span>
-                      <span className="text-xs text-text/50">{user.email}</span>
+                      <span className="text-xs text-text/70">{user.email}</span>
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-text/50 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 text-text/70 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
                     />
                   </motion.button>
 
@@ -241,7 +243,13 @@ export default function Navbar() {
                       <div className="flex items-center gap-3 px-4 py-3 mb-2">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
                           {user.avatarUrl ? (
-                            <img src={user.avatarUrl} className="h-10 w-10 rounded-full" />
+                            <img
+                              src={user.avatarUrl}
+                              alt={user.name}
+                              width={40}
+                              height={40}
+                              className="h-10 w-10 rounded-full"
+                            />
                           ) : (
                             <span className="text-background font-semibold">
                               {user.name?.charAt(0).toUpperCase()}
@@ -250,7 +258,7 @@ export default function Navbar() {
                         </div>
                         <div>
                           <p className="font-semibold text-text">{user.name}</p>
-                          <p className="text-sm text-text/50">{user.email}</p>
+                          <p className="text-sm text-text/70">{user.email}</p>
                         </div>
                       </div>
                       <Link

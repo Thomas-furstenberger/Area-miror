@@ -154,11 +154,13 @@ export default function TestimonialsCarousel() {
                       <img
                         src={testimonial.avatar}
                         alt={testimonial.name}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded-full bg-primary/20"
                       />
                       <div>
                         <p className="font-semibold text-background">{testimonial.name}</p>
-                        <p className="text-sm text-background/50">
+                        <p className="text-sm text-background/70">
                           {testimonial.role} @ {testimonial.company}
                         </p>
                       </div>

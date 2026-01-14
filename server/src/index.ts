@@ -812,6 +812,153 @@ fastify.get('/api/github/repos', async (request, _reply) => {
   }
 });
 
+// --- SPOTIFY OAUTH ---
+fastify.get('/api/auth/spotify', async (request, _reply) => {
+  const query = request.query as { token?: string; state?: string };
+  const redirectState = query.token || query.state;
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const redirectUri = process.env.SPOTIFY_CALLBACK_URL;
+  const scope =
+    'user-library-read playlist-modify-public playlist-modify-private user-modify-playback-state';
+
+  if (!clientId || !redirectUri)
+    return _reply.status(500).send({ error: 'Config Spotify manquante' });
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    scope: scope,
+    redirect_uri: redirectUri,
+  });
+
+  if (redirectState) params.append('state', redirectState);
+
+  return _reply.redirect(`https://accounts.spotify.com/authorize?${params.toString()}`);
+});
+
+fastify.get('/api/auth/spotify/callback', async (request, _reply) => {
+  try {
+    const query = request.query as { code?: string; error?: string; state?: string };
+    const { code, error, state: rawState } = query;
+
+    if (error) return _reply.status(401).send({ error });
+    if (!code) return _reply.status(400).send({ error: 'No code' });
+
+    const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization:
+          'Basic ' +
+          Buffer.from(
+            process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+          ).toString('base64'),
+      },
+      body: new URLSearchParams({
+        code,
+        redirect_uri: process.env.SPOTIFY_CALLBACK_URL!,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      console.error('Spotify Token Error:', errText);
+      return _reply.status(401).send({ error: 'Failed to exchange code' });
+    }
+
+    const tokenData = (await tokenRes.json()) as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    };
+
+    const userRes = await fetch('https://api.spotify.com/v1/me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!userRes.ok) return _reply.status(401).send({ error: 'Failed to fetch user info' });
+
+    const spotifyUser = (await userRes.json()) as {
+      id: string;
+      display_name: string;
+      images?: { url: string }[];
+      email: string;
+    };
+
+    let finalRedirectUrl = (process.env.FRONTEND_URL || 'http://localhost:8081') + '/login/success';
+    let sessionTokenToLink = null;
+
+    const userAgent = request.headers['user-agent']?.toLowerCase() || '';
+    if (userAgent.includes('mobile') || userAgent.includes('okhttp')) {
+      if (process.env.MOBILE_REDIRECT_URI) finalRedirectUrl = process.env.MOBILE_REDIRECT_URI;
+    }
+
+    if (rawState) {
+      try {
+        const stateObj = JSON.parse(rawState);
+        if (stateObj.redirect) finalRedirectUrl = stateObj.redirect;
+        if (stateObj.userToken) sessionTokenToLink = stateObj.userToken;
+      } catch {
+        if (rawState.startsWith('http') || rawState.startsWith('exp://')) {
+          finalRedirectUrl = rawState;
+        } else if (rawState === 'mobile') {
+          if (process.env.MOBILE_REDIRECT_URI) finalRedirectUrl = process.env.MOBILE_REDIRECT_URI;
+        } else {
+          sessionTokenToLink = rawState;
+        }
+      }
+    }
+
+    let finalSessionToken = null;
+
+    if (sessionTokenToLink) {
+      try {
+        const session = await userService.getSessionByToken(sessionTokenToLink);
+        if (session) {
+          const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+
+          await userService.connectOAuthToUser(session.user.id, 'SPOTIFY', spotifyUser.id, {
+            email: spotifyUser.email || `spotify_${spotifyUser.id}@area.local`,
+            name: spotifyUser.display_name,
+            avatarUrl: spotifyUser.images?.[0]?.url || null,
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            expiresAt: expiresAt,
+          });
+          finalSessionToken = sessionTokenToLink;
+        }
+      } catch (err) {
+        console.error('[OAuth] Error linking Spotify account:', err);
+      }
+    }
+
+    if (!finalSessionToken) {
+      const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+
+      const user = await userService.findOrCreateOAuthUser('SPOTIFY', spotifyUser.id, {
+        email: spotifyUser.email || `spotify_${spotifyUser.id}@area.local`,
+        name: spotifyUser.display_name,
+        avatarUrl: spotifyUser.images?.[0]?.url || null,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresAt: expiresAt,
+      });
+
+      finalSessionToken = generateSessionToken();
+      await userService.createSession(user.id, finalSessionToken);
+    }
+
+    const separator = finalRedirectUrl.includes('?') ? '&' : '?';
+    return _reply.redirect(
+      `${finalRedirectUrl}${separator}token=${encodeURIComponent(finalSessionToken)}&service=spotify&connected=true`
+    );
+  } catch (err) {
+    fastify.log.error(err);
+    return _reply.status(500).send({ error: 'Auth failed' });
+  }
+});
+
 // --- SERVER STARTUP ---
 const start = async () => {
   try {

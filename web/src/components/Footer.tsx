@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Github, Twitter, Linkedin, Mail, ArrowRight, Heart } from 'lucide-react';
+import { Github, Twitter, Linkedin, Mail, ArrowRight } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -105,9 +105,9 @@ export default function Footer() {
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-background font-bold text-xl">A</span>
               </div>
-              <span className="text-2xl font-bold">AREA</span>
+              <span className="text-2xl font-bold text-background">AREA</span>
             </Link>
-            <p className="text-background/60 leading-relaxed">
+            <p className="text-background/70 leading-relaxed">
               Automatisez vos workflows et boostez votre productivité avec notre plateforme
               puissante et intuitive.
             </p>
@@ -208,10 +208,8 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="py-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-background/50">© {currentYear} AREA. Tous droits réservés.</p>
-          <p className="flex items-center gap-2 text-sm text-background/50">
-            Fait avec <Heart className="w-4 h-4 text-red-500 fill-red-500" /> par l'équipe AREA
-          </p>
+          <p className="text-sm text-background/70">© {currentYear} AREA. Tous droits réservés.</p>
+          <p className="flex items-center gap-2 text-sm text-background/70"></p>
         </div>
       </div>
     </footer>
