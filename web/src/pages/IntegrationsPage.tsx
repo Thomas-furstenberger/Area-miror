@@ -4,12 +4,17 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import spotifyLogo from '../assets/logo-spotify.png';
+import discordLogo from '../assets/logo-discord.png';
+import googleLogo from '../assets/logo-google.png';
+import githubLogo from '../assets/logo-github.png';
 
 const categories = [
-  { id: 'all', name: 'Toutes', count: 5 },
+  { id: 'all', name: 'Toutes', count: 6 },
   { id: 'development', name: 'Développement', count: 1 },
   { id: 'communication', name: 'Communication', count: 1 },
   { id: 'productivity', name: 'Productivité', count: 1 },
+  { id: 'entertainment', name: 'Divertissement', count: 1 },
   { id: 'native', name: 'Natif', count: 2 },
 ];
 
@@ -19,12 +24,8 @@ const integrations = [
     name: 'GitHub',
     description: 'Automatisez vos workflows de développement avec les événements GitHub.',
     category: 'development',
-    icon: (
-      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-      </svg>
-    ),
-    color: '#181717',
+    icon: <img src={githubLogo} alt="GitHub" className="w-8 h-8 object-contain" />,
+    bgColor: 'bg-gray-900',
     triggers: ['Push', 'Pull Request', 'Issue', 'Release', 'Star'],
     actions: ['Create Issue', 'Create Comment', 'Merge PR'],
     popular: true,
@@ -35,27 +36,8 @@ const integrations = [
     name: 'Google',
     description: 'Gmail, YouTube et services Google intégrés pour vos automatisations.',
     category: 'productivity',
-    icon: (
-      <svg className="w-8 h-8" viewBox="0 0 24 24">
-        <path
-          fill="#4285F4"
-          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        />
-        <path
-          fill="#34A853"
-          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        />
-        <path
-          fill="#FBBC05"
-          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        />
-        <path
-          fill="#EA4335"
-          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        />
-      </svg>
-    ),
-    color: '#4285F4',
+    icon: <img src={googleLogo} alt="Google" className="w-8 h-8 object-contain" />,
+    bgColor: 'bg-white border border-gray-200',
     triggers: ['Nouvel email', 'Nouvelle vidéo YouTube', 'Événement calendrier'],
     actions: ['Envoyer email', 'Créer événement', 'Ajouter label'],
     popular: true,
@@ -66,12 +48,8 @@ const integrations = [
     name: 'Discord',
     description: 'Envoyez des messages et gérez votre serveur Discord automatiquement.',
     category: 'communication',
-    icon: (
-      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
-      </svg>
-    ),
-    color: '#5865F2',
+    icon: <img src={discordLogo} alt="Discord" className="w-8 h-8 object-contain" />,
+    bgColor: 'bg-[#5865F2]',
     triggers: ['Message reçu', 'Membre rejoint', 'Réaction ajoutée'],
     actions: ['Envoyer message', 'Envoyer embed', 'Ajouter rôle'],
     popular: true,
@@ -97,7 +75,7 @@ const integrations = [
         />
       </svg>
     ),
-    color: '#374151',
+    bgColor: 'bg-gray-700',
     triggers: ['Intervalle', 'Cron expression', 'Date spécifique'],
     actions: [],
     popular: false,
@@ -124,12 +102,24 @@ const integrations = [
         />
       </svg>
     ),
-    color: '#06B6D4',
+    bgColor: 'bg-gradient-to-r from-blue-400 to-cyan-400',
     triggers: ['Température seuil', 'Pluie détectée', 'Alerte météo'],
     actions: [],
     popular: false,
     isNative: true,
     docsUrl: '/docs/integrations/weather',
+  },
+  {
+    id: 'spotify',
+    name: 'Spotify',
+    description: 'Contrôlez votre musique et créez des automatisations audio.',
+    category: 'entertainment',
+    icon: <img src={spotifyLogo} alt="Spotify" className="w-8 h-8 object-contain" />,
+    bgColor: 'bg-[#1DB954]',
+    triggers: ['Nouvelle chanson jouée', 'Playlist mise à jour'],
+    actions: ['Jouer musique', 'Ajouter à playlist', 'Contrôler lecture'],
+    popular: true,
+    docsUrl: '/docs/integrations/spotify',
   },
 ];
 
@@ -241,8 +231,7 @@ export default function IntegrationsPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div
-                    className="w-14 h-14 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${integration.color}15` }}
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg ${integration.bgColor}`}
                   >
                     {integration.icon}
                   </div>
