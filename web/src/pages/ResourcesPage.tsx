@@ -7,7 +7,6 @@ import {
   Users,
   MessageCircle,
   ArrowRight,
-  ExternalLink,
   Play,
   Download,
   Clock,
@@ -378,7 +377,7 @@ export default function ResourcesPage() {
           </div>
         </section>
 
-        {/* Downloads Section */}
+        {/* How to Contribute Section */}
         <section className="container mx-auto px-6 mb-24">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -389,72 +388,26 @@ export default function ResourcesPage() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
                 <h2 className="text-2xl md:text-3xl font-bold text-text mb-4">
-                  Téléchargez nos ressources
+                  Comment contribuer ?
                 </h2>
                 <p className="text-text/60 mb-6">
-                  Accédez à nos guides PDF, cheatsheets et templates pour travailler hors ligne.
+                  Vous souhaitez contribuer au projet AREA ? Consultez notre guide de contribution
+                  pour savoir comment participer au développement.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <a
-                    href="/downloads/guide-demarrage.pdf"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-text font-medium hover:shadow-md transition-all"
+                    href="/HOWTOCONTRIBUTE.md"
+                    download="HOWTOCONTRIBUTE.md"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 hover:shadow-md transition-all"
                   >
                     <Download className="w-4 h-4" />
-                    Guide de démarrage (PDF)
-                  </a>
-                  <a
-                    href="/downloads/api-cheatsheet.pdf"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-text font-medium hover:shadow-md transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    API Cheatsheet (PDF)
+                    Télécharger le guide
                   </a>
                 </div>
               </div>
               <div className="w-32 h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-                <FileText className="w-16 h-16 text-primary" />
+                <Code className="w-16 h-16 text-primary" />
               </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Community CTA */}
-        <section className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto bg-text rounded-3xl p-10 md:p-16 text-center"
-          >
-            <Users className="w-16 h-16 text-primary mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Rejoignez la communauté AREA
-            </h2>
-            <p className="text-white/70 text-lg mb-8 max-w-2xl mx-auto">
-              Plus de 10 000 utilisateurs partagent leurs astuces, templates et s'entraident sur
-              notre Discord.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://discord.gg/area"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-[#5865F2] text-white font-semibold rounded-xl hover:bg-[#4752C4] transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
-                </svg>
-                Rejoindre Discord
-              </a>
-              <a
-                href="https://github.com/area"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 text-white font-semibold rounded-xl hover:bg-white/20 transition-colors"
-              >
-                <ExternalLink className="w-5 h-5" />
-                Voir sur GitHub
-              </a>
             </div>
           </motion.div>
         </section>

@@ -11,6 +11,7 @@ import PricingPage from './pages/PricingPage';
 import ResourcesPage from './pages/ResourcesPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import ContactPage from './pages/ContactPage';
+import AccessibilityWidget from './components/AccessibilityWidget';
 
 // Composant qui fait défiler vers le haut à chaque changement de route
 function ScrollToTop() {
@@ -27,6 +28,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <AccessibilityWidget />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
