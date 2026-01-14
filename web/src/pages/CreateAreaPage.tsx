@@ -132,18 +132,33 @@ export default function CreateAreaPage() {
       const response = await fetch(`${API_URL}/about.json`);
       if (!response.ok) throw new Error('Failed to fetch services');
       const data = await response.json();
+      
+      interface RawItem {
+        name: string;
+        description: string;
+        configFields?: ConfigField[];
+        args?: ConfigField[];
+        params?: ConfigField[];
+      }
 
-      const rawServices = data.server?.services || [];
-      const normalizedServices = rawServices.map((service: any) => ({
+      interface RawService {
+        name: string;
+        actions: RawItem[];
+        reactions: RawItem[];
+      }
+
+      const rawServices = (data.server?.services || []) as RawService[];
+      
+      const normalizedServices = rawServices.map((service) => ({
         ...service,
-        actions: service.actions.map((action: any) => ({
+        actions: service.actions.map((action) => ({
           ...action,
-          configFields: action.configFields || action.args || action.params || [],
+          configFields: action.configFields || action.args || action.params || []
         })),
-        reactions: service.reactions.map((reaction: any) => ({
+        reactions: service.reactions.map((reaction) => ({
           ...reaction,
-          configFields: reaction.configFields || reaction.args || reaction.params || [],
-        })),
+          configFields: reaction.configFields || reaction.args || reaction.params || []
+        }))
       }));
 
       setServices(normalizedServices);
