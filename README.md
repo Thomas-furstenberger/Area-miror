@@ -7,6 +7,7 @@ A complete Epitech project including a Fastify backend API, a React + Vite web a
 ## 📖 Project Description
 
 AREA allows users to create custom automations by connecting different web services. Each automation (AREA) consists of:
+
 - **Action** (trigger): An event that starts the automation
 - **REAction**: An action that is executed in response
 
@@ -35,15 +36,15 @@ docker-compose up --build
 
 ### Available Services
 
-| Service | Actions (Triggers) | REActions | OAuth |
-|---------|-------------------|-----------|-------|
-| **Gmail/Google** | • New email received | • Send an email | ✅ |
-| **GitHub** | • New commit<br>• New issue<br>• New PR | • Create an issue<br>• Comment on a PR | ✅ |
-| **Discord** | • New message in channel | • Send message (webhook)<br>• Send private message | ✅ |
-| **YouTube** | • New video from channel | - | ✅ |
-| **Spotify** | • New liked song<br>• New playlist | • Add to playlist | ✅ |
-| **OpenWeather** | • Temperature exceeds threshold<br>• Weather change | - | ❌ (API Key) |
-| **Timer** | • Every X minutes<br>• At specific time | - | ❌ |
+| Service          | Actions (Triggers)                                  | REActions                                          | OAuth        |
+| ---------------- | --------------------------------------------------- | -------------------------------------------------- | ------------ |
+| **Gmail/Google** | • New email received                                | • Send an email                                    | ✅           |
+| **GitHub**       | • New commit<br>• New issue<br>• New PR             | • Create an issue<br>• Comment on a PR             | ✅           |
+| **Discord**      | • New message in channel                            | • Send message (webhook)<br>• Send private message | ✅           |
+| **YouTube**      | • New video from channel                            | -                                                  | ✅           |
+| **Spotify**      | • New liked song<br>• New playlist                  | • Add to playlist                                  | ✅           |
+| **OpenWeather**  | • Temperature exceeds threshold<br>• Weather change | -                                                  | ❌ (API Key) |
+| **Timer**        | • Every X minutes<br>• At specific time             | -                                                  | ❌           |
 
 ### Backend (Fastify + TypeScript + Prisma)
 
@@ -277,6 +278,7 @@ The APK is also available via Docker at `http://localhost:8082/client.apk`
 Complete Swagger documentation available at: **http://localhost:8080/documentation**
 
 The documentation includes:
+
 - All endpoints with detailed descriptions
 - Request/response schemas
 - Payload examples
@@ -286,17 +288,20 @@ The documentation includes:
 ### Main Endpoints
 
 #### Health
+
 - `GET /` - Welcome message
 - `GET /health` - Server status
 - `GET /about.json` - Service catalog (for mobile)
 
 #### Authentication
+
 - `POST /api/auth/register` - Create an account
 - `POST /api/auth/login` - Email/password login
 - `GET /api/auth/user` - Get logged-in user
 - `POST /api/auth/logout` - Logout
 
 #### OAuth
+
 - `GET /api/auth/gmail` - Gmail/Google OAuth
 - `GET /api/auth/github` - GitHub OAuth
 - `GET /api/auth/discord` - Discord OAuth
@@ -305,12 +310,14 @@ The documentation includes:
 - `DELETE /api/user/oauth/:provider` - Disconnect OAuth account
 
 #### AREAs (Automations)
+
 - `GET /api/areas` - List user's AREAs
 - `POST /api/areas` - Create a new AREA
 - `PUT /api/areas/:id/toggle` - Enable/Disable an AREA
 - `DELETE /api/areas/:id` - Delete an AREA
 
 #### Services
+
 - `POST /api/area/gmail/send_email` - Send an email
 - `GET /api/github/repos` - List GitHub repositories
 
@@ -374,6 +381,7 @@ See [HOWTOCONTRIBUTE.md](./HOWTOCONTRIBUTE.md) for a complete guide on adding ne
 ## 📦 Technologies Used
 
 ### Backend
+
 - **Fastify** - Fast and lightweight web framework
 - **TypeScript** - Static typing
 - **Prisma** - Modern ORM for PostgreSQL
@@ -382,6 +390,7 @@ See [HOWTOCONTRIBUTE.md](./HOWTOCONTRIBUTE.md) for a complete guide on adding ne
 - **OAuth2** - External service integration
 
 ### Web Frontend
+
 - **React 18** - UI library
 - **Vite** - Fast build tool
 - **TypeScript** - Static typing
@@ -389,12 +398,14 @@ See [HOWTOCONTRIBUTE.md](./HOWTOCONTRIBUTE.md) for a complete guide on adding ne
 - **Lucide React** - Modern icons
 
 ### Mobile
+
 - **React Native** - Cross-platform mobile framework
 - **Expo** - Toolchain and SDK
 - **TypeScript** - Static typing
 - **Expo Router** - File-based navigation
 
 ### DevOps
+
 - **Docker** - Containerization
 - **Docker Compose** - Multi-service orchestration
 - **PostgreSQL** - Relational database
@@ -413,6 +424,7 @@ This project is part of an Epitech school project.
 **Status**: ✅ Complete and functional project
 
 **Features**:
+
 - ✅ Complete backend API with authentication
 - ✅ 7 integrated services (Gmail, GitHub, Discord, YouTube, Spotify, OpenWeather, Timer)
 - ✅ 15+ implemented actions and reactions

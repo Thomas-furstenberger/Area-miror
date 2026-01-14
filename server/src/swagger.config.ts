@@ -33,19 +33,23 @@ export const swaggerOptions = {
       },
       {
         name: 'Authentication',
-        description: 'User authentication and session management. Register, login, and manage user accounts with traditional email/password authentication.',
+        description:
+          'User authentication and session management. Register, login, and manage user accounts with traditional email/password authentication.',
       },
       {
         name: 'OAuth',
-        description: 'OAuth2 authentication with external service providers (GitHub, Discord, Google/Gmail, Spotify). Use these endpoints to link accounts or authenticate users through third-party services.',
+        description:
+          'OAuth2 authentication with external service providers (GitHub, Discord, Google/Gmail, Spotify). Use these endpoints to link accounts or authenticate users through third-party services.',
       },
       {
         name: 'Areas',
-        description: 'Automation workflow management (AREAs). Create, list, enable/disable, and delete automation workflows that connect triggers (actions) from one service to reactions in another service.',
+        description:
+          'Automation workflow management (AREAs). Create, list, enable/disable, and delete automation workflows that connect triggers (actions) from one service to reactions in another service.',
       },
       {
         name: 'Services',
-        description: 'Available services catalog and service-specific operations. Get information about all supported integrations and their available actions and reactions.',
+        description:
+          'Available services catalog and service-specific operations. Get information about all supported integrations and their available actions and reactions.',
       },
     ],
     components: {
@@ -54,7 +58,8 @@ export const swaggerOptions = {
           type: 'http' as const,
           scheme: 'bearer' as const,
           bearerFormat: 'JWT',
-          description: 'JWT authentication using Bearer token. Include the session token in the Authorization header: "Bearer <your_token_here>". Obtain tokens through /api/auth/register, /api/auth/login, or OAuth endpoints.',
+          description:
+            'JWT authentication using Bearer token. Include the session token in the Authorization header: "Bearer <your_token_here>". Obtain tokens through /api/auth/register, /api/auth/login, or OAuth endpoints.',
         },
       },
     },
