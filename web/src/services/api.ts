@@ -17,7 +17,7 @@ export const register = async (email: string, password: string, name: string) =>
     const data = await response.json();
 
     if (!response.ok) {
-      return { success: false, error: data.error || 'Erreur inconnue' };
+      return { success: false, error: data.message || data.error || 'Erreur inconnue' };
     }
     return { success: true, data };
   } catch {
@@ -35,7 +35,8 @@ export const login = async (email: string, password: string) => {
     const data = await response.json();
 
     if (!response.ok) {
-      return { success: false, error: data.error || 'Erreur inconnue' };
+      // CORRECTION: On lit d'abord 'message'
+      return { success: false, error: data.message || data.error || 'Erreur inconnue' };
     }
     return { success: true, data };
   } catch {
@@ -56,7 +57,7 @@ export const me = async () => {
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 401) logout();
-      return { success: false, error: data.error };
+      return { success: false, error: data.message || data.error };
     }
     return { success: true, data };
   } catch {
@@ -120,7 +121,7 @@ export const createArea = async (data: {
 
     const resData = await response.json();
     if (!response.ok) {
-      return { success: false, error: resData.error || 'Erreur lors de la création' };
+      return { success: false, error: resData.message || resData.error || 'Erreur lors de la création' };
     }
     return { success: true, area: resData.area };
   } catch {

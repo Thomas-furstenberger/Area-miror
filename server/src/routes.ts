@@ -295,6 +295,7 @@ export async function registerRoutes(
             type: 'object',
             properties: {
               error: { type: 'string', description: 'Error message' },
+              message: { type: 'string', description: 'Validation error details' },
             },
           },
         },

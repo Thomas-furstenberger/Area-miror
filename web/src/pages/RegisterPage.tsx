@@ -136,7 +136,7 @@ export default function RegisterPage() {
                 />
               </div>
               <p className="text-xs text-secondary mt-2">
-                Minimum 8 caractères avec une majuscule et un chiffre
+                Minimum 6 caractères avec une majuscule et un chiffre
               </p>
             </div>
 
