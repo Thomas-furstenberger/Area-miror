@@ -121,7 +121,10 @@ export const createArea = async (data: {
 
     const resData = await response.json();
     if (!response.ok) {
-      return { success: false, error: resData.message || resData.error || 'Erreur lors de la création' };
+      return {
+        success: false,
+        error: resData.message || resData.error || 'Erreur lors de la création',
+      };
     }
     return { success: true, area: resData.area };
   } catch {
