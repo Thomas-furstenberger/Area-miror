@@ -35,7 +35,6 @@ export const login = async (email: string, password: string) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // CORRECTION: On lit d'abord 'message'
       return { success: false, error: data.message || data.error || 'Erreur inconnue' };
     }
     return { success: true, data };

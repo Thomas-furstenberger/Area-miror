@@ -12,7 +12,7 @@ export class TimerAction {
       // La conversion vers Paris time sera faite dans getParisTime()
       const utcNow = new Date();
       console.log(
-        `[Timer Action] WorldTimeAPI unavailable, using system UTC time: ${utcNow.toISOString()}`
+        `[Timer Action] WorldTimeAPI unavailable, using system UTC time: ${utcNow.toISOString()}, ${error}`
       );
       return utcNow;
     }
