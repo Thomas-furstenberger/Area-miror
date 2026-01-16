@@ -64,7 +64,7 @@ export default function ExploreScreen() {
   const getServiceConfig = (technicalName: string) => {
     const n = technicalName.toLowerCase();
 
-    if (n === 'gmail') {
+    if (n === 'gmail' || n === 'google') {
       return {
         label: 'Google',
         icon: 'logo-google',
@@ -93,17 +93,24 @@ export default function ExploreScreen() {
     const n = serviceName.toLowerCase();
 
     if (['timer', 'weather', 'chuck'].includes(n)) return true;
-    if (n === 'gmail' && connectedAccounts.includes('google')) return true;
+
+    if ((n === 'gmail' || n === 'google') && connectedAccounts.includes('google')) return true;
 
     return connectedAccounts.includes(n);
   };
 
   const handleServicePress = async (serviceName: string) => {
-    if (['timer', 'weather', 'chuck'].includes(serviceName)) return;
+    const n = serviceName.toLowerCase();
 
-    let targetProvider = serviceName;
-    let disconnectProvider = serviceName;
-    if (serviceName === 'gmail') disconnectProvider = 'google';
+    if (['timer', 'weather', 'chuck'].includes(n)) return;
+
+    let targetProvider = n;
+    let disconnectProvider = n;
+
+    if (n === 'google' || n === 'gmail') {
+      targetProvider = 'gmail';
+      disconnectProvider = 'google';
+    }
 
     if (isConnected(serviceName)) {
       Alert.alert('Déconnexion', `Voulez-vous déconnecter ce service ?`, [
@@ -114,7 +121,8 @@ export default function ExploreScreen() {
           onPress: async () => {
             setProcessing(serviceName);
             await apiCall(`/api/user/oauth/${disconnectProvider}`, 'DELETE');
-            setConnectedAccounts((prev) => prev.filter((p) => p !== 'google' && p !== serviceName));
+
+            setConnectedAccounts((prev) => prev.filter((p) => p !== disconnectProvider));
             setProcessing(null);
           },
         },
@@ -124,6 +132,7 @@ export default function ExploreScreen() {
       try {
         const authUrl = await getAuthUrl(targetProvider);
         const result = await WebBrowser.openAuthSessionAsync(authUrl);
+
         if (result.type === 'success' || result.type === 'dismiss') {
           setTimeout(loadData, 1500);
         }
@@ -166,7 +175,8 @@ export default function ExploreScreen() {
 
               const config = getServiceConfig(technicalName);
               const active = isConnected(technicalName);
-              const isProcessing = processing === technicalName;
+              const isProcessing =
+                processing === technicalName || processing === service.name.toLowerCase();
               const isNative = ['timer', 'weather', 'chuck'].includes(technicalName);
 
               return (

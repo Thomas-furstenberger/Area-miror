@@ -99,7 +99,33 @@ export default function CreateAreaScreen() {
     try {
       const res = await fetchAbout();
       if (res.success && res.data?.server?.services) {
-        setServices(res.data.server.services);
+        const rawServices: Service[] = res.data.server.services;
+
+        const processedServices: Service[] = [];
+
+        rawServices.forEach((service) => {
+          if (service.name === 'Google') {
+            processedServices.push({
+              name: 'Gmail',
+              actions: service.actions.filter((a) => a.name === 'email_received'),
+              reactions: service.reactions.filter((r) =>
+                ['send_email', 'mark_as_read'].includes(r.name)
+              ),
+            });
+
+            processedServices.push({
+              name: 'YouTube',
+              actions: service.actions.filter((a) => a.name === 'new_video'),
+              reactions: service.reactions.filter((r) =>
+                ['add_to_playlist', 'like_video', 'post_comment'].includes(r.name)
+              ),
+            });
+          } else {
+            processedServices.push(service);
+          }
+        });
+
+        setServices(processedServices);
       } else {
         Alert.alert('Erreur', 'Impossible de charger les services.');
       }
@@ -185,7 +211,10 @@ export default function CreateAreaScreen() {
 
   const getBackendServiceName = (serviceName: string) => {
     const s = serviceName.toLowerCase();
-    return s === 'gmail' || s === 'youtube' ? 'Google' : serviceName;
+    if (s === 'gmail' || s === 'youtube') {
+      return 'Google';
+    }
+    return serviceName;
   };
 
   const handleCreate = async () => {
@@ -388,6 +417,23 @@ export default function CreateAreaScreen() {
         return (
           <View>
             <Text style={styles.headerTitle}>Résumé</Text>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.ifText}>SI</Text>
+                <View style={styles.summaryContent}>
+                  <Text style={styles.summaryService}>{actionService?.name}</Text>
+                  <Text style={styles.summaryDesc}>{action?.description}</Text>
+                </View>
+              </View>
+              <View style={styles.connectorLine} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.thenText}>ALORS</Text>
+                <View style={styles.summaryContent}>
+                  <Text style={styles.summaryService}>{reactionService?.name}</Text>
+                  <Text style={styles.summaryDesc}>{reaction?.description}</Text>
+                </View>
+              </View>
+            </View>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Nom de l'automation</Text>
               <TextInput
@@ -447,16 +493,53 @@ export default function CreateAreaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFF' },
-  backBtn: { marginRight: 15 },
-  stepIndicator: { fontSize: 16, fontWeight: '600', color: '#666' },
-  progressContainer: { height: 4, backgroundColor: '#E0E0E0', width: '100%' },
-  progressBar: { height: '100%', backgroundColor: COLORS.link },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 20 },
-  subHeader: { fontSize: 16, color: '#666', marginBottom: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFF',
+  },
+  backBtn: {
+    marginRight: 15,
+  },
+  stepIndicator: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  progressContainer: {
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    width: '100%',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: COLORS.link,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 100,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 20,
+  },
+  subHeader: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -476,27 +559,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
-  cardSub: { fontSize: 13, color: '#888', marginTop: 4, textTransform: 'uppercase' },
-  selectedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFEFEF',
-    alignSelf: 'flex-start',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 15,
+  cardContent: {
+    flex: 1,
+    marginLeft: 15,
   },
-  badgeText: {
-    marginLeft: 8,
-    fontWeight: '600',
-    color: '#555',
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+  },
+  cardSub: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 4,
     textTransform: 'uppercase',
   },
-  formBox: { backgroundColor: '#FFF', padding: 20, borderRadius: 16, marginBottom: 20 },
-  inputContainer: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8 },
-  helperText: { fontSize: 12, color: '#888', marginBottom: 8, fontStyle: 'italic' },
+  formBox: {
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#444',
+    marginBottom: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  requiredStar: {
+    color: 'red',
+  },
   input: {
     backgroundColor: '#F9F9F9',
     padding: 15,
@@ -504,6 +605,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EEE',
     fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   nextButton: {
     flexDirection: 'row',
@@ -517,7 +622,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  nextButtonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginRight: 10 },
+  nextButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
   createButton: {
     backgroundColor: '#10B981',
     padding: 18,
@@ -525,10 +635,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  createButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  emptyState: { alignItems: 'center', padding: 20 },
-  emptyText: { marginTop: 10, color: '#888' },
-  selectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  createButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    marginTop: 10,
+    color: '#888',
+  },
+  selectRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
   optionChip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -537,32 +661,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  optionChipSelected: { backgroundColor: COLORS.link, borderColor: COLORS.link },
-  optionText: { color: '#555', fontWeight: '500' },
-  summaryCard: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: '#EEE',
+  optionChipSelected: {
+    backgroundColor: COLORS.link,
+    borderColor: COLORS.link,
   },
-  summaryRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  ifText: { fontSize: 14, fontWeight: '900', color: '#6366F1', width: 60, marginTop: 2 },
-  thenText: { fontSize: 14, fontWeight: '900', color: '#10B981', width: 60, marginTop: 2 },
-  summaryContent: { flex: 1 },
-  summaryService: {
-    fontSize: 12,
-    color: '#888',
-    textTransform: 'uppercase',
-    fontWeight: '700',
+  optionText: {
+    color: '#555',
+    fontWeight: '500',
   },
-  summaryDesc: { fontSize: 16, fontWeight: '600', color: '#333', marginTop: 2 },
-  connectorLine: {
-    width: 2,
-    height: 20,
-    backgroundColor: '#DDD',
-    marginLeft: 22,
-    marginVertical: 10,
+  optionTextSelected: {
+    color: '#FFF',
   },
 });
