@@ -5,7 +5,7 @@
  ** login
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -17,6 +17,7 @@ import {
   Platform,
   Alert,
   Linking,
+  Modal,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,7 +31,42 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [showSettings, setShowSettings] = useState(false);
+  const [ipAddress, setIpAddress] = useState('');
+  const [port, setPort] = useState('8080');
+
+  useEffect(() => {
+    const loadNetworkSettings = async () => {
+      const savedIp = await AsyncStorage.getItem('server_ip');
+      const savedPort = await AsyncStorage.getItem('server_port');
+      if (savedIp) setIpAddress(savedIp);
+      if (savedPort) setPort(savedPort);
+    };
+    loadNetworkSettings();
+  }, []);
+
+  const handleSaveSettings = async () => {
+    if (!ipAddress) {
+      Alert.alert('Erreur', 'Veuillez entrer une adresse IP valide');
+      return;
+    }
+    await AsyncStorage.setItem('server_ip', ipAddress.trim());
+    await AsyncStorage.setItem('server_port', port.trim() || '8080');
+    setShowSettings(false);
+    Alert.alert('Succès', 'Configuration réseau mise à jour !');
+  };
+
   const handleLogin = async () => {
+    const currentIp = await AsyncStorage.getItem('server_ip');
+    if (!currentIp) {
+      Alert.alert(
+        'Configuration requise',
+        "Veuillez configurer l'IP du serveur via la roue crantée en haut à droite."
+      );
+      setShowSettings(true);
+      return;
+    }
+
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
@@ -51,17 +87,21 @@ export default function LoginScreen() {
   const handleOAuthLogin = async (provider: 'gmail' | 'github' | 'discord') => {
     try {
       const ip = await AsyncStorage.getItem('server_ip');
-      const port = await AsyncStorage.getItem('server_port');
-      const url = `http://${ip}:${port}/api/auth/${provider}?state=mobile`;
+      const serverPort = await AsyncStorage.getItem('server_port');
+
+      if (!ip) {
+        Alert.alert('Configuration requise', "Veuillez configurer l'IP du serveur");
+        setShowSettings(true);
+        return;
+      }
+
+      const url = `http://${ip}:${serverPort}/api/auth/${provider}?state=mobile`;
 
       Alert.alert(
         'Connexion OAuth',
         `Après connexion, vous recevrez un token. Copiez-le et revenez à l'application.`,
         [
-          {
-            text: 'Annuler',
-            style: 'cancel',
-          },
+          { text: 'Annuler', style: 'cancel' },
           {
             text: 'Continuer',
             onPress: async () => {
@@ -74,10 +114,7 @@ export default function LoginScreen() {
                     'Token reçu',
                     'Collez le token copié depuis le navigateur :',
                     [
-                      {
-                        text: 'Annuler',
-                        style: 'cancel',
-                      },
+                      { text: 'Annuler', style: 'cancel' },
                       {
                         text: 'Valider',
                         onPress: async (token) => {
@@ -116,6 +153,10 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
+        <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
+          <Ionicons name="settings-outline" size={24} color={COLORS.h1} />
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Bonjour,</Text>
           <Text style={styles.titleText}>Bienvenue !</Text>
@@ -197,6 +238,52 @@ export default function LoginScreen() {
           </Link>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showSettings}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSettings(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Configuration Réseau</Text>
+              <TouchableOpacity onPress={() => setShowSettings(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalLabel}>Adresse IP du Serveur</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="globe-outline" size={20} color={COLORS.h2} style={styles.icon} />
+              <TextInput
+                style={styles.input}
+                placeholder="ex: 192.168.1.50"
+                value={ipAddress}
+                onChangeText={setIpAddress}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <Text style={styles.modalLabel}>Port</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="server-outline" size={20} color={COLORS.h2} style={styles.icon} />
+              <TextInput
+                style={styles.input}
+                placeholder="ex: 8080"
+                value={port}
+                onChangeText={setPort}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveSettings}>
+              <Text style={styles.saveButtonText}>Sauvegarder</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -210,6 +297,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    right: 24,
+    zIndex: 10,
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     marginBottom: 40,
@@ -306,5 +407,48 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
     color: COLORS.link,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    color: COLORS.h1,
+  },
+  modalLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: COLORS.h2,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  saveButton: {
+    backgroundColor: COLORS.link,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
   },
 });

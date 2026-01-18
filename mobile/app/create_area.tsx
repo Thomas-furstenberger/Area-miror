@@ -5,7 +5,7 @@
  ** create_area.tsx
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants/theme';
@@ -137,6 +138,7 @@ export default function CreateAreaScreen() {
   };
 
   const validateConfig = (fields: ConfigField[] | undefined, values: any) => {
+    Keyboard.dismiss();
     if (!fields) return true;
     for (const field of fields) {
       if (field.required) {
@@ -163,18 +165,27 @@ export default function CreateAreaScreen() {
 
   const formatParams = (provider: string, config: any) => {
     const p = provider.toLowerCase();
-    const newConfig = { ...config };
+
+    const newConfig: Record<string, any> = {};
+    Object.keys(config).forEach((key) => {
+      const val = config[key];
+      if (typeof val === 'string') {
+        newConfig[key] = val.trim();
+      } else {
+        newConfig[key] = val;
+      }
+    });
 
     if (p.includes('timer')) {
-      if (config.time) {
+      if (newConfig.time) {
         let h = 0,
           m = 0;
-        if (typeof config.time === 'string' && config.time.includes(':')) {
-          const parts = config.time.split(':');
+        if (typeof newConfig.time === 'string' && newConfig.time.includes(':')) {
+          const parts = newConfig.time.split(':');
           h = parseInt(parts[0], 10);
           m = parseInt(parts[1], 10);
         } else {
-          const date = new Date(config.time);
+          const date = new Date(newConfig.time);
           if (!isNaN(date.getTime())) {
             h = date.getHours();
             m = date.getMinutes();
@@ -183,23 +194,23 @@ export default function CreateAreaScreen() {
         newConfig.hour = h;
         newConfig.minute = m;
       }
-      if (config.date) {
+      if (newConfig.date) {
         newConfig.date =
-          typeof config.date === 'string'
-            ? config.date
-            : new Date(config.date).toISOString().split('T')[0];
+          typeof newConfig.date === 'string'
+            ? newConfig.date
+            : new Date(newConfig.date).toISOString().split('T')[0];
       }
-      if (config.day) {
-        newConfig.dayOfWeek = parseInt(config.day, 10);
+      if (newConfig.day) {
+        newConfig.dayOfWeek = parseInt(newConfig.day, 10);
       }
     }
 
-    if (p.includes('weather') && config.temperature) {
-      newConfig.temperature = Number(config.temperature);
+    if (p.includes('weather') && newConfig.temperature) {
+      newConfig.temperature = Number(newConfig.temperature);
     }
 
-    if (p.includes('github') && config.issue_number) {
-      newConfig.issue_number = parseInt(config.issue_number, 10);
+    if (p.includes('github') && newConfig.issue_number) {
+      newConfig.issue_number = parseInt(newConfig.issue_number, 10);
     }
 
     if (p.includes('youtube') && newConfig.video_url && !newConfig.video_id) {
@@ -225,7 +236,7 @@ export default function CreateAreaScreen() {
     setSubmitting(true);
     try {
       const payload = {
-        name: areaName,
+        name: areaName.trim(),
         action_provider: getBackendServiceName(actionService!.name),
         action_id: action!.name,
         action_params: formatParams(actionService!.name, actionConfig),
@@ -237,8 +248,9 @@ export default function CreateAreaScreen() {
       const res = await createArea(payload);
 
       if (res.success) {
-        Alert.alert('Succès', 'Automation créée avec succès !');
-        router.replace('/(tabs)/areas');
+        Alert.alert('Succès', 'Automation créée avec succès !', [
+          { text: 'OK', onPress: () => router.replace('/(tabs)/areas') },
+        ]);
       } else {
         Alert.alert('Erreur', res.error || 'Erreur lors de la création.');
       }
@@ -640,14 +652,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  emptyState: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    marginTop: 10,
-    color: '#888',
-  },
   selectRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -671,5 +675,54 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     color: '#FFF',
+  },
+  summaryCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  ifText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.link,
+    width: 60,
+    marginTop: 2,
+  },
+  thenText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#8E44AD',
+    width: 60,
+    marginTop: 2,
+  },
+  summaryContent: {
+    flex: 1,
+  },
+  summaryService: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
+  },
+  summaryDesc: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  connectorLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: '#E0E0E0',
+    marginLeft: 20,
+    marginVertical: 10,
   },
 });

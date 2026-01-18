@@ -596,7 +596,7 @@ export async function registerRoutes(
       const redirectState = query.token || query.state;
       const clientId = process.env.GITHUB_CLIENT_ID;
       const redirectUri = process.env.GITHUB_CALLBACK_URL;
-      const scope = 'user:email,read:user';
+      const scope = 'user:email,read:user,repo';
 
       if (!clientId || !redirectUri) {
         return _reply.status(500).send({ error: 'Configuration GitHub manquante' });

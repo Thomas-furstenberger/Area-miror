@@ -79,6 +79,14 @@ export const apiCall = async <T = any>(
   }
 };
 
+export const login = async (email: string, password: string) => {
+  return apiCall('/api/auth/login', 'POST', { email, password });
+};
+
+export const register = async (email: string, password: string, name: string) => {
+  return apiCall('/api/auth/register', 'POST', { email, password, name });
+};
+
 export const fetchAbout = async () => {
   return apiCall('/about.json', 'GET');
 };
