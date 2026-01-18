@@ -323,6 +323,42 @@ The documentation includes:
 
 ## 🏗️ Architecture
 
+### Global Overview
+
+The project follows a microservices-like architecture using Docker Compose.
+
+```mermaid
+graph TD
+    subgraph Docker Network
+        DB[(PostgreSQL)]
+        Server[Backend Server<br/>(Node/Fastify)]
+        Web[Web Client<br/>(React)]
+        Mobile[Mobile APK Server<br/>(Nginx)]
+    end
+
+    UserMobile((Mobile App))
+    UserWeb((Web Browser))
+
+    %% User Flows
+    UserWeb --Port 8081--> Web
+    UserMobile --Port 8080--> Server
+    Web --Port 8080--> Server
+
+    %% Internal Flows
+    Server --Read/Write--> DB
+    Mobile --Shared Volume--> Web
+
+    %% External Services
+    Server --OAuth2 / API--> Google[Google API]
+    Server --OAuth2 / API--> Github[GitHub API]
+    Server --OAuth2 / API--> Discord[Discord API]
+    Server --OAuth2 / API--> Spotify[Spotify API]
+    Server --API Key--> Weather[OpenWeather]
+
+    style Server fill:#f9f,stroke:#333,stroke-width:2px
+    style DB fill:#bbf,stroke:#333,stroke-width:2px
+```
+
 ### Database Schema
 
 - **User**: User information and credentials
@@ -332,7 +368,35 @@ The documentation includes:
 
 ### Hook Executor (Automation Engine)
 
-Runs every 15 seconds and:
+The core business logic runs on a periodic interval to check for triggers.
+
+```mermaid
+sequenceDiagram
+    participant Cron as Hook Executor (Cron)
+    participant DB as Database
+    participant API as External API (e.g. GitHub)
+    participant React as Reaction Service (e.g. Discord)
+
+    loop Every 15 seconds
+        Cron->>DB: Fetch Active AREAs
+        DB-->>Cron: List (User Token + Config)
+
+        par For each AREA
+            Cron->>API: Check condition (e.g. New commit?)
+            API-->>Cron: API Response
+        end
+
+        alt Condition Met
+            Cron->>Cron: Check if already processed
+
+            opt If new event
+                Cron->>React: Execute Reaction (e.g. Send message)
+                React-->>Cron: Success
+                Cron->>DB: Log execution
+            end
+        end
+    end
+```
 
 1. Retrieves all active AREAs
 2. For each AREA:
