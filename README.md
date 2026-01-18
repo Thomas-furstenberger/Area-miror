@@ -330,10 +330,10 @@ The project follows a microservices-like architecture using Docker Compose.
 ```mermaid
 graph TD
     subgraph Docker Network
-        DB[(PostgreSQL)]
-        Server[Backend Server<br/>(Node/Fastify)]
-        Web[Web Client<br/>(React)]
-        Mobile[Mobile APK Server<br/>(Nginx)]
+        DB[("PostgreSQL")]
+        Server["Backend Server<br/>(Node/Fastify)"]
+        Web["Web Client<br/>(React)"]
+        Mobile["Mobile APK Server<br/>(Nginx)"]
     end
 
     UserMobile((Mobile App))
