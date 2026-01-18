@@ -1,51 +1,55 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Github, Twitter, Linkedin, Mail, ArrowRight } from 'lucide-react';
+import { Github, Mail, ArrowRight } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
     product: [
-      { name: 'Fonctionnalités', href: '#features' },
-      { name: 'Intégrations', href: '#integrations' },
-      { name: 'Tarifs', href: '#pricing' },
-      { name: 'Changelog', href: '#changelog' },
-      { name: 'Roadmap', href: '#roadmap' },
+      { name: 'Fonctionnalités', href: '/#features', isExternal: false },
+      { name: 'Intégrations', href: '/integrations', isExternal: false },
+      { name: 'Services', href: '/services', isExternal: false },
+      { name: 'Tarifs', href: '/pricing', isExternal: false },
     ],
     company: [
-      { name: 'À propos', href: '#about' },
-      { name: 'Blog', href: '#blog' },
-      { name: 'Carrières', href: '#careers' },
-      { name: 'Presse', href: '#press' },
-      { name: 'Contact', href: '/contact' },
+      { name: 'À propos', href: '#', isExternal: true },
+      { name: 'Blog', href: '#', isExternal: true },
+      { name: 'Carrières', href: '#', isExternal: true },
+      { name: 'Contact', href: '/contact', isExternal: false },
     ],
     resources: [
-      { name: 'Documentation', href: '#docs' },
-      { name: 'API Reference', href: '#api' },
-      { name: 'Guides', href: '#guides' },
-      { name: 'Communauté', href: '#community' },
-      { name: 'Support', href: '#support' },
+      { name: 'Documentation', href: '/resources', isExternal: false },
+      { name: 'API Reference', href: '/resources', isExternal: false },
+      { name: 'Guides', href: '/resources', isExternal: false },
+      { name: 'Support', href: '/contact', isExternal: false },
     ],
     legal: [
-      { name: 'Confidentialité', href: '#privacy' },
-      { name: 'Conditions', href: '#terms' },
-      { name: 'Cookies', href: '#cookies' },
-      { name: 'Licences', href: '#licenses' },
+      { name: 'Confidentialité', href: '#', isExternal: true },
+      { name: 'Conditions', href: '#', isExternal: true },
+      { name: 'Cookies', href: '#', isExternal: true },
     ],
   };
 
   const socialLinks = [
-    { name: 'GitHub', icon: Github, href: 'https://github.com' },
-    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com' },
-    { name: 'LinkedIn', icon: Linkedin, href: 'https://linkedin.com' },
-    { name: 'Email', icon: Mail, href: 'mailto:contact@area.com' },
+    {
+      name: 'GitHub',
+      icon: Github,
+      href: 'https://github.com/Thomas-furstenberger/Area-miror',
+      isExternal: true,
+    },
+    {
+      name: 'Contact',
+      icon: Mail,
+      href: '/contact',
+      isExternal: false,
+    },
   ];
 
   return (
     <footer className="bg-dark text-background relative overflow-hidden" role="contentinfo">
       {/* Background decoration */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-secondary/10 rounded-full blur-3xl" />
       </div>
@@ -101,7 +105,7 @@ export default function Footer() {
         <div className="py-16 grid grid-cols-2 md:grid-cols-6 gap-8">
           {/* Brand Column */}
           <div className="col-span-2 space-y-6">
-            <Link to="/" className="flex flex-col">
+            <Link to="/" className="flex flex-col w-fit">
               <span className="text-2xl font-bold text-background tracking-wide">AREA</span>
               <svg
                 className="w-12 h-3 -mt-1 text-background"
@@ -126,25 +130,47 @@ export default function Footer() {
                 />
               </svg>
             </Link>
-            <p className="text-background/70 leading-relaxed">
+            <p className="text-background/70 leading-relaxed max-w-sm">
               Automatisez vos workflows et boostez votre productivité avec notre plateforme
               puissante et intuitive.
             </p>
-            {/* Social Links */}
+
+            {/* Social Links Updated */}
             <div className="flex gap-4">
-              {socialLinks.map((social) => (
-                <motion.a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-background/70 hover:text-background hover:bg-primary transition-all duration-300"
-                  aria-label={social.name}
-                >
-                  <social.icon className="w-5 h-5" />
-                </motion.a>
-              ))}
+              {socialLinks.map((social) => {
+                const Icon = social.icon;
+                const buttonClasses =
+                  'w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-background/70 hover:text-background hover:bg-primary transition-all duration-300';
+
+                // Rendu conditionnel : Lien externe (<a>) ou interne (<Link>)
+                if (social.isExternal) {
+                  return (
+                    <motion.a
+                      key={social.name}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ scale: 1.1, y: -2 }}
+                      className={buttonClasses}
+                      aria-label={social.name}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </motion.a>
+                  );
+                } else {
+                  return (
+                    <Link key={social.name} to={social.href}>
+                      <motion.div
+                        whileHover={{ scale: 1.1, y: -2 }}
+                        className={buttonClasses}
+                        aria-label={social.name}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </motion.div>
+                    </Link>
+                  );
+                }
+              })}
             </div>
           </div>
 
@@ -174,12 +200,21 @@ export default function Footer() {
               <ul className="space-y-3">
                 {footerLinks.company.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      to={link.href}
-                      className="text-background/60 hover:text-primary transition-colors text-sm"
-                    >
-                      {link.name}
-                    </Link>
+                    {link.isExternal ? (
+                      <a
+                        href={link.href}
+                        className="text-background/60 hover:text-primary transition-colors text-sm"
+                      >
+                        {link.name}
+                      </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="text-background/60 hover:text-primary transition-colors text-sm"
+                      >
+                        {link.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -193,12 +228,21 @@ export default function Footer() {
               <ul className="space-y-3">
                 {footerLinks.resources.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      to={link.href}
-                      className="text-background/60 hover:text-primary transition-colors text-sm"
-                    >
-                      {link.name}
-                    </Link>
+                    {link.isExternal ? (
+                      <a
+                        href={link.href}
+                        className="text-background/60 hover:text-primary transition-colors text-sm"
+                      >
+                        {link.name}
+                      </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="text-background/60 hover:text-primary transition-colors text-sm"
+                      >
+                        {link.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -212,12 +256,12 @@ export default function Footer() {
               <ul className="space-y-3">
                 {footerLinks.legal.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      to={link.href}
+                    <a
+                      href={link.href}
                       className="text-background/60 hover:text-primary transition-colors text-sm"
                     >
                       {link.name}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -228,7 +272,9 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="py-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-background/70">© {currentYear} AREA. Tous droits réservés.</p>
-          <p className="flex items-center gap-2 text-sm text-background/70"></p>
+          <div className="flex items-center gap-4 text-sm text-background/70">
+            <span>Epitech Project</span>
+          </div>
         </div>
       </div>
     </footer>

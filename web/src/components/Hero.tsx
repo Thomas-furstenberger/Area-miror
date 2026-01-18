@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, Play, Sparkles, Zap, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Play, Sparkles, Zap, Shield, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface HeroProps {
@@ -7,6 +8,8 @@ interface HeroProps {
 }
 
 export default function Hero({ scrollY = 0 }: HeroProps) {
+  const [showDemo, setShowDemo] = useState(false);
+
   const floatingAnimation = {
     y: [0, -20, 0],
     transition: {
@@ -46,14 +49,6 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
           }}
           transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
           className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            x: [0, 60, 0],
-            y: [0, -60, 0],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-1/2 right-1/3 w-64 h-64 bg-primary/5 rounded-full blur-2xl"
         />
       </div>
 
@@ -123,10 +118,13 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
             </Link>
+
+            {/* Modified "Watch Demo" button to trigger modal */}
             <motion.button
+              onClick={() => setShowDemo(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
-              className="group px-8 py-4 bg-white/50 backdrop-blur-sm text-text rounded-2xl font-semibold text-lg flex items-center gap-3 border border-primary/20 hover:border-primary/40 transition-all duration-300"
+              className="group px-8 py-4 bg-white/50 backdrop-blur-sm text-text rounded-2xl font-semibold text-lg flex items-center gap-3 border border-primary/20 hover:border-primary/40 transition-all duration-300 cursor-pointer"
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                 <Play className="w-4 h-4 text-primary ml-0.5" />
@@ -245,6 +243,50 @@ export default function Hero({ scrollY = 0 }: HeroProps) {
           </svg>
         </div>
       </div>
+
+      {/* VIDEO MODAL */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={() => setShowDemo(false)} // Close when clicking on the background
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 group"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on the video content
+            >
+              {/* Styled close button */}
+              <button
+                onClick={() => setShowDemo(false)}
+                className="absolute top-4 right-4 z-20 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 hover:rotate-90 transition-all duration-300 opacity-0 group-hover:opacity-100"
+                title="Close"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Video Player */}
+              <div className="relative pt-[56.25%] bg-black">
+                <video
+                  className="absolute top-0 left-0 w-full h-full object-contain"
+                  controls
+                  autoPlay
+                  src="/demo.mp4"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom wave */}
       <div className="absolute bottom-0 left-0 right-0">
