@@ -1,5 +1,5 @@
 import { HookExecutor } from '../hook.executor';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Area, User } from '@prisma/client';
 import { AreaService } from '../area.service';
 import { TimerAction } from '../actions/timer.action';
 import { DiscordReaction } from '../reactions/discord.reaction';
@@ -50,8 +50,10 @@ describe('HookExecutor', () => {
     const timerAction = executor['timerAction'] as TimerAction;
     const discordReaction = executor['discordReaction'] as DiscordReaction;
 
-    jest.spyOn(areaService, 'getActiveAreas').mockResolvedValue(mockAreas as any);
-    jest.spyOn(areaService, 'updateLastTriggered').mockResolvedValue({} as any);
+    jest
+      .spyOn(areaService, 'getActiveAreas')
+      .mockResolvedValue(mockAreas as unknown as (Area & { user: User })[]);
+    jest.spyOn(areaService, 'updateLastTriggered').mockResolvedValue({} as unknown as Area);
 
     jest.spyOn(timerAction, 'checkTimeReached').mockResolvedValue(true);
 
