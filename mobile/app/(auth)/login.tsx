@@ -16,7 +16,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Linking,
   Modal,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
@@ -84,69 +83,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleOAuthLogin = async (provider: 'gmail' | 'github' | 'discord') => {
-    try {
-      const ip = await AsyncStorage.getItem('server_ip');
-      const serverPort = await AsyncStorage.getItem('server_port');
-
-      if (!ip) {
-        Alert.alert('Configuration requise', "Veuillez configurer l'IP du serveur");
-        setShowSettings(true);
-        return;
-      }
-
-      const url = `http://${ip}:${serverPort}/api/auth/${provider}?state=mobile`;
-
-      Alert.alert(
-        'Connexion OAuth',
-        `Après connexion, vous recevrez un token. Copiez-le et revenez à l'application.`,
-        [
-          { text: 'Annuler', style: 'cancel' },
-          {
-            text: 'Continuer',
-            onPress: async () => {
-              const supported = await Linking.canOpenURL(url);
-              if (supported) {
-                await Linking.openURL(url);
-
-                setTimeout(() => {
-                  Alert.prompt(
-                    'Token reçu',
-                    'Collez le token copié depuis le navigateur :',
-                    [
-                      { text: 'Annuler', style: 'cancel' },
-                      {
-                        text: 'Valider',
-                        onPress: async (token) => {
-                          if (token && token.trim()) {
-                            await AsyncStorage.setItem('user_token', token.trim());
-                            Alert.alert('Succès', 'Connexion réussie !', [
-                              {
-                                text: 'OK',
-                                onPress: () => router.replace('/(tabs)'),
-                              },
-                            ]);
-                          } else {
-                            Alert.alert('Erreur', 'Token invalide');
-                          }
-                        },
-                      },
-                    ],
-                    'plain-text'
-                  );
-                }, 2000);
-              } else {
-                Alert.alert('Erreur', "Impossible d'ouvrir le navigateur");
-              }
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Erreur', 'Erreur lors de la connexion OAuth');
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -196,39 +132,6 @@ export default function LoginScreen() {
           >
             <Text style={styles.loginButtonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
             {!loading && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-          </TouchableOpacity>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OU</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.oauthButton, { backgroundColor: '#4285f4' }]}
-            onPress={() => handleOAuthLogin('gmail')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-google" size={20} color="#FFF" />
-            <Text style={styles.oauthButtonText}>Continuer avec Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.oauthButton, { backgroundColor: '#24292e' }]}
-            onPress={() => handleOAuthLogin('github')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-github" size={20} color="#FFF" />
-            <Text style={styles.oauthButtonText}>Continuer avec GitHub</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.oauthButton, { backgroundColor: '#5865f2' }]}
-            onPress={() => handleOAuthLogin('discord')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-discord" size={20} color="#FFF" />
-            <Text style={styles.oauthButtonText}>Continuer avec Discord</Text>
           </TouchableOpacity>
 
           <Link href="/(auth)/register" asChild>
@@ -368,36 +271,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Inter_700Bold',
     fontSize: 16,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: COLORS.h2,
-    marginHorizontal: 16,
-  },
-  oauthButton: {
-    height: 52,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  oauthButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
   },
   registerButton: {
     alignItems: 'center',
