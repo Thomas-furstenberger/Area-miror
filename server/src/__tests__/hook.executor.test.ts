@@ -1,5 +1,8 @@
 import { HookExecutor } from '../hook.executor';
 import { PrismaClient } from '@prisma/client';
+import { AreaService } from '../area.service';
+import { TimerAction } from '../actions/timer.action';
+import { DiscordReaction } from '../reactions/discord.reaction';
 
 const mockPrisma = {
   area: {
@@ -25,21 +28,38 @@ describe('HookExecutor', () => {
         reactionType: 'send_message',
         reactionConfig: { webhookUrl: 'http://discord.hook' },
         lastTriggered: new Date('2020-01-01'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        description: null,
+        user: {
+          id: 1,
+          email: 'test@test.com',
+          name: 'Test User',
+          password: 'hashed_password',
+          avatarUrl: null,
+          emailVerified: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          githubId: null,
+          githubLogin: null,
+        },
       },
     ];
 
-    jest.spyOn((executor as any).areaService, 'getActiveAreas').mockResolvedValue(mockAreas);
-    jest.spyOn((executor as any).areaService, 'updateLastTriggered').mockResolvedValue(true);
+    const areaService = executor['areaService'] as AreaService;
+    const timerAction = executor['timerAction'] as TimerAction;
+    const discordReaction = executor['discordReaction'] as DiscordReaction;
 
-    jest.spyOn((executor as any).timerAction, 'checkTimeReached').mockResolvedValue(true);
+    jest.spyOn(areaService, 'getActiveAreas').mockResolvedValue(mockAreas as any);
+    jest.spyOn(areaService, 'updateLastTriggered').mockResolvedValue({} as any);
 
-    const discordSpy = jest
-      .spyOn((executor as any).discordReaction, 'sendMessage')
-      .mockResolvedValue(true);
+    jest.spyOn(timerAction, 'checkTimeReached').mockResolvedValue(true);
+
+    const discordSpy = jest.spyOn(discordReaction, 'sendMessage').mockResolvedValue(true);
 
     await executor.execute();
 
-    expect((executor as any).timerAction.checkTimeReached).toHaveBeenCalled();
+    expect(timerAction.checkTimeReached).toHaveBeenCalled();
     expect(discordSpy).toHaveBeenCalledWith(
       'http://discord.hook',
       expect.stringContaining('Time alert')

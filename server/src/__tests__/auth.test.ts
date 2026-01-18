@@ -1,7 +1,12 @@
 import { hashPassword, comparePassword, generateAccessToken } from '../auth';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 process.env.JWT_SECRET = 'your-secret-key';
+
+interface DecodedToken extends JwtPayload {
+  userId: number;
+  email: string;
+}
 
 describe('Auth Utils', () => {
   describe('hashPassword', () => {
@@ -39,7 +44,7 @@ describe('Auth Utils', () => {
 
       const secret = 'your-secret-key';
 
-      const decoded = jwt.verify(token, secret) as any;
+      const decoded = jwt.verify(token, secret) as DecodedToken;
       expect(decoded.userId).toBe(1);
       expect(decoded.email).toBe('test@test.com');
     });
