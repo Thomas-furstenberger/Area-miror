@@ -8,8 +8,6 @@ export class TimerAction {
       const data = (await response.json()) as { datetime: string };
       return new Date(data.datetime);
     } catch (error) {
-      // API indisponible, retourner l'heure UTC du système
-      // La conversion vers Paris time sera faite dans getParisTime()
       const utcNow = new Date();
       console.log(
         `[Timer Action] WorldTimeAPI unavailable, using system UTC time: ${utcNow.toISOString()}, ${error}`
@@ -60,7 +58,6 @@ export class TimerAction {
     const currentTotalMinutes = currentHour * 60 + currentMinute;
     const targetTotalMinutes = config.hour * 60 + config.minute;
 
-    // Si lastTriggered existe, vérifier qu'on n'a pas déjà déclenché aujourd'hui à cette heure précise
     if (lastTriggered) {
       const lastDate = new Date(lastTriggered);
       const lastParisTime = this.getParisTime(lastDate);
@@ -68,19 +65,15 @@ export class TimerAction {
       const isSameDay =
         lastParisTime.day === day && lastParisTime.month === month && lastParisTime.year === year;
 
-      // Si on a déjà déclenché aujourd'hui
       if (isSameDay) {
         const lastTotalMinutes = lastParisTime.hour * 60 + lastParisTime.minute;
 
-        // Si lastTriggered est >= à l'heure cible, on a déjà déclenché pour cette heure aujourd'hui
         if (lastTotalMinutes >= targetTotalMinutes) {
           return false;
         }
-        // Sinon, lastTriggered était avant l'heure cible, on peut déclencher si l'heure est atteinte
       }
     }
 
-    // Déclencher si l'heure cible est atteinte ou dépassée
     if (currentTotalMinutes >= targetTotalMinutes) {
       console.log(`[Timer Action] Time reached: ${config.hour}:${config.minute} (once per day)`);
       return true;
@@ -108,13 +101,11 @@ export class TimerAction {
     const now = await this.getTimeFromAPI();
     if (!now) return false;
 
-    // Obtenir le jour de la semaine en timezone Paris
     const parisTimeStr = now.toLocaleString('en-US', {
       timeZone: 'Europe/Paris',
       weekday: 'short',
     });
 
-    // Convertir "Mon", "Tue", etc. en numéro (0 = Sunday, 1 = Monday, ...)
     const dayMap: Record<string, number> = {
       Sun: 0,
       Mon: 1,

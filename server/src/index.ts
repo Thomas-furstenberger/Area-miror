@@ -15,7 +15,6 @@ const fastify = Fastify({
   logger: true,
 });
 
-// Register CORS
 fastify.register(cors, {
   origin: true,
   credentials: true,
@@ -23,15 +22,14 @@ fastify.register(cors, {
   allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
-// Register Swagger plugins BEFORE routes
 fastify.register(swagger, swaggerOptions);
 fastify.register(swaggerUi, swaggerUiOptions);
 
 const prisma = new PrismaClient();
+const hookExecutor = new HookExecutor(prisma);
 const userService = new UserService(prisma);
 const gmailService = new GmailService(prisma);
 const areaService = new AreaService(prisma);
-const hookExecutor = new HookExecutor(prisma);
 
 // Register all routes
 fastify.register(async function (fastify) {

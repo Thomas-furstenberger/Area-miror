@@ -325,7 +325,6 @@ export class HookExecutor {
       if (config.destination === 'discord' && config.discord_webhook) {
         await this.discordReaction.sendMessage(config.discord_webhook, weatherInfo);
       } else if (config.destination === 'gmail') {
-        // Si email_to n'est pas spécifié, récupérer l'email de l'utilisateur
         let emailTo = config.email_to;
 
         if (!emailTo) {

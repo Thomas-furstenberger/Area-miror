@@ -7,7 +7,6 @@ export class WeatherAction {
     city: string
   ): Promise<{ latitude: number; longitude: number } | null> {
     try {
-      // Nettoyer le nom de la ville (supprimer les espaces avant/après)
       const cleanCity = city.trim();
 
       const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanCity)}&count=1&language=fr&format=json`;
@@ -45,12 +44,10 @@ export class WeatherAction {
     lastTriggered: Date | null
   ): Promise<boolean> {
     try {
-      // Vérifier si l'action a déjà été déclenchée aujourd'hui
       if (lastTriggered) {
         const now = new Date();
         const lastTriggerDate = new Date(lastTriggered);
 
-        // Si c'est le même jour, ne pas déclencher
         if (
           now.getFullYear() === lastTriggerDate.getFullYear() &&
           now.getMonth() === lastTriggerDate.getMonth() &&
@@ -92,12 +89,10 @@ export class WeatherAction {
     lastTriggered: Date | null
   ): Promise<boolean> {
     try {
-      // Vérifier si l'action a déjà été déclenchée aujourd'hui
       if (lastTriggered) {
         const now = new Date();
         const lastTriggerDate = new Date(lastTriggered);
 
-        // Si c'est le même jour, ne pas déclencher
         if (
           now.getFullYear() === lastTriggerDate.getFullYear() &&
           now.getMonth() === lastTriggerDate.getMonth() &&
@@ -139,12 +134,10 @@ export class WeatherAction {
     lastTriggered: Date | null
   ): Promise<boolean> {
     try {
-      // Vérifier si l'action a déjà été déclenchée aujourd'hui
       if (lastTriggered) {
         const now = new Date();
         const lastTriggerDate = new Date(lastTriggered);
 
-        // Si c'est le même jour, ne pas déclencher
         if (
           now.getFullYear() === lastTriggerDate.getFullYear() &&
           now.getMonth() === lastTriggerDate.getMonth() &&
@@ -185,7 +178,6 @@ export class WeatherAction {
   }
 
   private mapWeatherCodeToCondition(code: number): string {
-    // Mapping WMO codes to condition types
     if (code === 0 || code === 1) return 'clear';
     if (code >= 2 && code <= 3) return 'clouds';
     if (code >= 45 && code <= 48) return 'mist';

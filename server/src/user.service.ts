@@ -124,7 +124,7 @@ export class UserService {
         email: userData.email,
         name: userData.name,
         avatarUrl: userData.avatarUrl,
-        emailVerified: true, // OAuth providers verify email
+        emailVerified: true,
         oauthAccounts: {
           create: {
             provider,
